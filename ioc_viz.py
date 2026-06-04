@@ -98,7 +98,7 @@ VARIANT_LABELS = [f"Variant {i + 1}" for i in range(4)]
 
 def simulate(x0, y0, theta0, xt, yt, k1, k2, k3,
              variant_idx, dt=0.01, max_steps=5000, tol=1e-3,
-             saturate=False):
+             saturate=True):
     """
     Simulate the closed-loop system from start pose to target.
 
@@ -163,11 +163,12 @@ class InteractiveSim:
 
     def __init__(self):
         # -- Default state --
-        self.x0, self.y0, self.theta0 = 5.0, 3.0, np.deg2rad(60)
+        self.x0, self.y0, self.theta0 = -6.0, -2.0, np.deg2rad(30)
         self.xt, self.yt = 0.0, 0.0
-        self.k1, self.k2, self.k3 = 1.0, 2.0, 0.5
+        self.k1, self.k2, self.k3 = 0.6, 2.0, 0.5
         self.r1, self.r2 = -4.0, 0.0
-        self.variant_idx = 0
+        self.w1, self.w2 = 1.0, 1.0
+        self.variant_idx = 3
         self.saturate = False
         self._dragging = None          # 'start' | 'target' | None
         self.ioc_result = None         # dict from optimal_curve()
@@ -187,7 +188,7 @@ class InteractiveSim:
 
     def _build_axes(self):
         # Trajectory (left, large)
-        self.ax_traj = self.fig.add_axes((0.04, 0.30, 0.44, 0.66))
+        self.ax_traj = self.fig.add_axes((0.04, 0.4, 0.44, 0.55))
         self.ax_traj.set_aspect("equal")
         self.ax_traj.set_xlabel("x")
         self.ax_traj.set_ylabel("y")
@@ -199,7 +200,7 @@ class InteractiveSim:
         self.ax_traj.grid(True, alpha=0.3)
 
         # v, ω  time-series (top-right)
-        self.ax_vw = self.fig.add_axes((0.54, 0.70, 0.43, 0.26))
+        self.ax_vw = self.fig.add_axes((0.54, 0.70, 0.4, 0.25))
         self.ax_w = self.ax_vw.twinx()
         self.ax_vw.set_xlabel("t [s]")
         self.ax_vw.set_ylabel("v [m/s]", color="tab:blue")
@@ -210,14 +211,14 @@ class InteractiveSim:
         self.ax_vw.grid(True, alpha=0.3)
 
         # x, y, θ  time-series (middle-right)
-        self.ax_xyz = self.fig.add_axes((0.54, 0.38, 0.43, 0.26))
+        self.ax_xyz = self.fig.add_axes((0.54, 0.38, 0.4, 0.25))
         self.ax_xyz.set_xlabel("t [s]")
         self.ax_xyz.set_ylabel("state")
         self.ax_xyz.set_title("Cartesian states  x, y, θ", fontsize=10)
         self.ax_xyz.grid(True, alpha=0.3)
 
         # ρ, δ, γ  time-series (bottom-right)
-        self.ax_pdg = self.fig.add_axes((0.54, 0.06, 0.43, 0.26))
+        self.ax_pdg = self.fig.add_axes((0.54, 0.06, 0.4, 0.25))
         self.ax_pdg.set_xlabel("t [s]")
         self.ax_pdg.set_ylabel("state")
         self.ax_pdg.set_title("Polar states  ρ, δ, γ", fontsize=10)
@@ -252,14 +253,19 @@ class InteractiveSim:
         self.arrow_target = self._make_arrow(
             self.xt, self.yt, 0.0, "darkred")
 
+        # obstacle overlay (circle at (r1, r2) with radius 0.5)
+        self.obstacle_patch = Circle(
+            (self.r1, self.r2), 0.5, fc="gray", ec="gray", lw=2, ls="-", fill=True, alpha=0.5, zorder=9, label="obstacle")
+        
         self.ax_traj.add_patch(self.pt_start)
         self.ax_traj.add_patch(self.pt_target)
         self.ax_traj.add_line(self.arrow_start)
         self.ax_traj.add_line(self.arrow_target)
+        self.ax_traj.add_patch(self.obstacle_patch)
         self.ax_traj.legend(
             handles=[self.line_traj, self.line_ioc,
                      self.ctrl_polygon, self.ctrl_scatter,
-                     self.pt_start, self.pt_target],
+                     self.pt_start, self.pt_target, self.obstacle_patch],
             loc="upper right", fontsize=7,
         ).set_zorder(20)
 
@@ -270,37 +276,37 @@ class InteractiveSim:
             [], [], "tab:red", lw=1.5, label="ω")
         # -- x, y, θ plot --
         (self.line_x,) = self.ax_xyz.plot(
-            [], [], "tab:blue", lw=1.0, label="x")
+            [], [], "tab:blue", lw=1.5, label="x")
         (self.line_y,) = self.ax_xyz.plot(
-            [], [], "tab:red", lw=1.0, label="y")
+            [], [], "tab:red", lw=1.5, label="y")
         (self.line_theta,) = self.ax_xyz.plot(
-            [], [], "tab:green", lw=1.0, label="θ")
+            [], [], "tab:green", lw=1.5, label="θ")
 
         # -- ρ, δ, γ plot --
         (self.line_rho,) = self.ax_pdg.plot(
-            [], [], "tab:blue", lw=1.0, label="ρ")
+            [], [], "tab:blue", lw=1.5, label="ρ")
         (self.line_delta,) = self.ax_pdg.plot(
-            [], [], "tab:red", lw=1.0, label="δ")
+            [], [], "tab:red", lw=1.5, label="δ")
         (self.line_gamma,) = self.ax_pdg.plot(
-            [], [], "tab:green", lw=1.0, label="γ")
+            [], [], "tab:green", lw=1.5, label="γ")
 
         # IOC time-series (dashed)
         (self.line_ioc_v,) = self.ax_vw.plot(
-            [], [], "--", color="darkorange", lw=1.0, alpha=0.7, label="IOC v")
+            [], [], "--", color="cyan", lw=2.5, alpha=0.7, label="IOC v")
         (self.line_ioc_w,) = self.ax_w.plot(
-            [], [], "--", color="brown", lw=1.0, alpha=0.7, label="IOC ω")
+            [], [], "--", color="orange", lw=2.5, alpha=0.7, label="IOC ω")
         (self.line_ioc_x,) = self.ax_xyz.plot(
-            [], [], "--", color="darkorange", lw=1.0, alpha=0.7, label="IOC x")
+            [], [], "--", color="cyan", lw=2.5, alpha=0.7, label="IOC x")
         (self.line_ioc_y,) = self.ax_xyz.plot(
-            [], [], "--", color="brown", lw=1.0, alpha=0.7, label="IOC y")
+            [], [], "--", color="orange", lw=2.5, alpha=0.7, label="IOC y")
         (self.line_ioc_theta,) = self.ax_xyz.plot(
-            [], [], "--", color="purple", lw=1.0, alpha=0.7, label="IOC θ")
+            [], [], "--", color="purple", lw=2.5, alpha=0.7, label="IOC θ")
         (self.line_ioc_rho,) = self.ax_pdg.plot(
-            [], [], "--", color="darkorange", lw=1.0, alpha=0.7, label="IOC ρ")
+            [], [], "--", color="cyan", lw=2.5, alpha=0.7, label="IOC ρ")
         (self.line_ioc_delta,) = self.ax_pdg.plot(
-            [], [], "--", color="brown", lw=1.0, alpha=0.7, label="IOC δ")
+            [], [], "--", color="orange", lw=2.5, alpha=0.7, label="IOC δ")
         (self.line_ioc_gamma,) = self.ax_pdg.plot(
-            [], [], "--", color="purple", lw=1.0, alpha=0.7, label="IOC γ")
+            [], [], "--", color="purple", lw=2.5, alpha=0.7, label="IOC γ")
 
         # legends (built after all lines are created)
         lines_vw = [self.line_v, self.line_w, self.line_ioc_v, self.line_ioc_w]
@@ -315,88 +321,97 @@ class InteractiveSim:
         self.ax_pdg.legend(lines_pdg, [str(l.get_label()) for l in lines_pdg],
                            loc="upper right", fontsize=6)
         
-        # obstacle overlay (circle at (r1, r2) with radius 0.5)
-        self.obstacle_patch = Circle(
-            (self.r1, self.r2), 0.5, fc="none", ec="gray", lw=2, ls="-", fill=True, alpha=0.5, zorder=9)
-        self.ax_traj.add_patch(self.obstacle_patch)
 
     @staticmethod
     def _make_arrow(x, y, theta, color):
         dx = R_ARROW * np.cos(theta)
         dy = R_ARROW * np.sin(theta)
         return Line2D([x, x + dx], [y, y + dy],
-                       color=color, lw=2.5, zorder=9)
+                       color=color,lw=2.5, zorder=9)
 
     # ── Widgets ──────────────────────────────────────────────
 
     def _build_widgets(self):
         # Saturation toggle
-        ax_sat = self.fig.add_axes((0.04, 0.35, 0.15, 0.04))
+        ax_sat = self.fig.add_axes((0.04, 0.33, 0.1, 0.03))
         self.check_sat = CheckButtons(
             ax_sat, ["tanh saturate"], actives=[self.saturate])
         self.check_sat.on_clicked(self._on_saturate)
 
-        # IOC button
-        ax_ioc_btn = self.fig.add_axes((0.04, 0.01, 0.12, 0.035))
-        self.btn_ioc = Button(ax_ioc_btn, "Compute IOC",
-                              color="lightcoral", hovercolor="tomato")
-        self.btn_ioc.on_clicked(self._on_compute_ioc)
-
-        # IOC status text
-        self.ax_ioc_status = self.fig.add_axes((0.17, 0.005, 0.08, 0.045))
-        self.ax_ioc_status.axis("off")
-        self.ioc_status_text = self.ax_ioc_status.text(
-            0, 0.5, "", va="center", fontfamily="monospace", fontsize=7,
-            color="darkorange", transform=self.ax_ioc_status.transAxes)
-
         # Control weights r₁, r₂
-        ax_r1 = self.fig.add_axes((0.04, 0.29, 0.18, 0.02))
+        ax_r1 = self.fig.add_axes((0.04, 0.30, 0.18, 0.02))
         self.slider_r1 = Slider(
-            ax_r1, "r₁", -5.0, 5.0, valinit=self.r1, valstep=0.5)
+            ax_r1, "Ox", -5.0, 5.0, valinit=self.r1, valstep=0.1)
         self.slider_r1.on_changed(self._on_slider)
 
-        ax_r2 = self.fig.add_axes((0.04, 0.32, 0.18, 0.02))
+        ax_r2 = self.fig.add_axes((0.04, 0.27, 0.18, 0.02))
         self.slider_r2 = Slider(
-            ax_r2, "r₂", -5.0, 5.0, valinit=self.r2, valstep=0.5)
+            ax_r2, "Oy", -5.0, 5.0, valinit=self.r2, valstep=0.1)
         self.slider_r2.on_changed(self._on_slider)
 
+        # IOC control weights w₁, w₂
+        ax_w1 = self.fig.add_axes((0.04, 0.24, 0.18, 0.02))
+        self.slider_w1 = Slider(
+            ax_w1, "w₁ (ctrl)", 0.1, 10.0, valinit=self.w1, valstep=0.1)
+        self.slider_w1.on_changed(self._on_slider)
+
+        ax_w2 = self.fig.add_axes((0.04, 0.21, 0.18, 0.02))
+        self.slider_w2 = Slider(
+            ax_w2, "w₂ (ctrl)", 0.1, 10.0, valinit=self.w2, valstep=0.1)
+        self.slider_w2.on_changed(self._on_slider)
+
         # Gain k₁
-        ax_k1 = self.fig.add_axes((0.04, 0.22, 0.18, 0.025))
+        ax_k1 = self.fig.add_axes((0.04, 0.16, 0.18, 0.02))
         self.slider_k1 = Slider(
             ax_k1, "k₁", 0.1, 5.0, valinit=self.k1, valstep=0.01)
         self.slider_k1.on_changed(self._on_slider)
 
         # Gain k₂
-        ax_k2 = self.fig.add_axes((0.04, 0.16, 0.18, 0.025))
+        ax_k2 = self.fig.add_axes((0.04, 0.13, 0.18, 0.02))
         self.slider_k2 = Slider(
             ax_k2, "k₂", 0.0, 10.0, valinit=self.k2, valstep=0.01)
         self.slider_k2.on_changed(self._on_slider)
 
         # Gain k₃
-        ax_k3 = self.fig.add_axes((0.04, 0.10, 0.18, 0.025))
+        ax_k3 = self.fig.add_axes((0.04, 0.10, 0.18, 0.02))
         self.slider_k3 = Slider(
             ax_k3, "k₃", 0.0, 10.0, valinit=self.k3, valstep=0.01)
         self.slider_k3.on_changed(self._on_slider)
 
         # Initial orientation θ₀
-        ax_th0 = self.fig.add_axes((0.04, 0.04, 0.18, 0.025))
+        ax_th0 = self.fig.add_axes((0.04, 0.05, 0.18, 0.02))
         self.slider_th0 = Slider(
             ax_th0, "θ₀ [deg]", -180, 180,
             valinit=np.rad2deg(self.theta0), valstep=1)
         self.slider_th0.on_changed(self._on_slider)
 
         # Radio buttons — control-law variant
-        ax_radio = self.fig.add_axes((0.27, 0.04, 0.18, 0.24))
+        ax_radio = self.fig.add_axes((0.27, 0.135, 0.08, 0.18))
         self.radio = RadioButtons(
             ax_radio, VARIANT_LABELS, active=self.variant_idx)
         self.radio.on_clicked(self._on_radio)
 
         # Info readout
-        self.ax_info = self.fig.add_axes((0.46, 0.04, 0.06, 0.24))
+        self.ax_info = self.fig.add_axes((0.36, 0.12, 0.1, 0.2))
         self.ax_info.axis("off")
         self.info_text = self.ax_info.text(
-            0, 0.95, "", va="top", fontfamily="monospace", fontsize=8,
+            0, 0.95, "", va="top", fontfamily="monospace", fontsize=10,
             transform=self.ax_info.transAxes)
+        
+
+        # IOC button
+        ax_ioc_btn = self.fig.add_axes((0.27, 0.07, 0.08, 0.03))
+        self.btn_ioc = Button(ax_ioc_btn, "Compute IOC",
+                              color="lightcoral", hovercolor="tomato")
+        self.btn_ioc.on_clicked(self._on_compute_ioc)
+
+        # IOC status text
+        self.ax_ioc_status = self.fig.add_axes((0.36, 0.07, 0.08, 0.03))
+        self.ax_ioc_status.axis("off")
+        self.ioc_status_text = self.ax_ioc_status.text(
+            0, 0.5, "", va="center", fontfamily="monospace", fontsize=10,
+            color="black", transform=self.ax_ioc_status.transAxes)
+
 
     # ── Event handling ───────────────────────────────────────
 
@@ -451,6 +466,8 @@ class InteractiveSim:
         self.k3 = self.slider_k3.val
         self.r1 = self.slider_r1.val
         self.r2 = self.slider_r2.val
+        self.w1 = self.slider_w1.val
+        self.w2 = self.slider_w2.val
         self.theta0 = np.deg2rad(self.slider_th0.val)
         self._update_arrow_line(
             self.arrow_start, self.x0, self.y0, self.theta0)
@@ -482,14 +499,18 @@ class InteractiveSim:
         try:
             print(f"[ioc_viz] start=({self.x0:.2f},{self.y0:.2f},{self.theta0:.2f})")
             print(f"[ioc_viz] end=({self.xt:.2f},{self.yt:.2f},0.00)")
-            print(f"[ioc_viz] gains: k1={self.k1}, k2={self.k2}, k3={self.k3}, r1={self.r1}, r2={self.r2}")
+            print(f"[ioc_viz] gains: k1={self.k1}, k2={self.k2}, k3={self.k3}")
+            print(f"[ioc_viz] obstacle: r1={self.r1}, r2={self.r2}")
+            print(f"[ioc_viz] ctrl weights: w1={self.w1}, w2={self.w2}")
             print(f"[ioc_viz] variant_idx={self.variant_idx}")
             self.ioc_result = optimal_curve(
                 start_point=(self.x0, self.y0, self.theta0),
                 end_point=(self.xt, self.yt, 0.0),
                 k1=self.k1, k2=self.k2, k3=self.k3,
                 r1=self.r1, r2=self.r2,
+                w1=self.w1, w2=self.w2,
                 ctrl_law_idx=self.variant_idx,
+                is_sat=self.saturate,
                 tot_iters=1000,
                 t_restart=1000
             )
@@ -613,6 +634,9 @@ class InteractiveSim:
         y_min, y_max = all_y.min(), all_y.max()
         x_range = max(x_max - x_min, 2.0)
         y_range = max(y_max - y_min, 2.0)
+        # keep ratio 3:2
+        x_range = max(x_range, y_range * 3 / 2)
+        y_range = x_range * 2 / 3
         self.ax_traj.set_xlim(x_min - margin, x_min + x_range + margin)
         self.ax_traj.set_ylim(y_min - margin, y_min + y_range + margin)
 
@@ -655,14 +679,14 @@ class InteractiveSim:
         # ── Info text ────────────────────────────────────
 
         lines = [
-            f"Start : ({self.x0:+.2f}, {self.y0:+.2f})\n"
-            f"θ₀ = {np.rad2deg(self.theta0):+.0f}°",
-            f"Target: ({self.xt:+.2f}, {self.yt:+.2f})",
+            f"Start  : ({self.x0:+.2f}, {self.y0:+.2f}, {np.rad2deg(self.theta0):+.0f}°)",
+            f"Target : ({self.xt:+.1f}, {self.yt:+.1f}, 0.0°)",
+            f"Obs    : ({self.r1:.1f}, {self.r2:.1f}), r=0.5",
+            f"Law    : V{self.variant_idx + 1}",
+            f"Sat    : {'ON' if self.saturate else 'OFF'}\n",
             f"k₁ = {self.k1:.2f}\nk₂ = {self.k2:.2f}\nk₃ = {self.k3:.2f}",
-            f"r₁ = {self.r1:.2f}\nr₂ = {self.r2:.2f}",
-            f"Law  : V{self.variant_idx + 1}",
-            f"Sat  : {'ON' if self.saturate else 'OFF'}",
-            f"Steps: {n}",
+            f"w₁ = {self.w1:.2f}\nw₂ = {self.w2:.2f}",
+            # f"Steps: {n}",
         ]
         if self.ioc_result is not None:
             lines.append(f"IOC  : cost={self.ioc_result['cost']:.2f}")

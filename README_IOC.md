@@ -177,6 +177,129 @@ $$
 L_g V = \nabla V \cdot \mathbf{g} = \begin{bmatrix} -\rho\cos\gamma + \frac{\delta\sin\gamma}{\rho} + \frac{\sin^2\gamma}{2\rho}, & -\frac{1}{2}\sin\gamma \end{bmatrix}
 $$
 
+### 2.3a 四种 CLF 设计方案
+
+第 2.3 节给出了 CLF 的一般形式，实际上对应于四种不同的状态空间 $\hat{\mathcal{S}}$，每种都有特定的 CLF 设计，分别对应四种 $\tilde{\omega}$ 变体。下面给出每种 CLF 的完整数学表达式、梯度和 Lie 导数。
+
+---
+
+#### CLF 0 — 状态空间 $\mathcal{S}$（对应 $\tilde{\omega}_1$，sinc 型耦合）
+
+$$V_0(\rho, \delta, \gamma) = \rho^2 + \frac{1}{2}(\delta^2 + \gamma^2 + 2)^2 - 2 + (\delta + \gamma)^2$$
+
+展开形式：
+
+$$V_0 = \rho^2 + \frac{1}{2}(\delta^4 + \gamma^4) + \delta^2\gamma^2 + 3\delta^2 + 3\gamma^2 + 2\delta\gamma$$
+
+梯度：
+
+$$\nabla V_0 = \begin{bmatrix}
+2\rho \\
+2\delta(\delta^2 + \gamma^2 + 2) + 2(\delta + \gamma) \\
+2\gamma(\delta^2 + \gamma^2 + 2) + 2(\delta + \gamma)
+\end{bmatrix}^\top$$
+
+该 CLF 的特点是 $\delta$ 和 $\gamma$ 通过 $(\delta + \gamma)^2$ 产生交叉耦合项 $2\delta\gamma$，对应于 $\tilde{\omega}_1$ 中 $\frac{\sin 2\gamma}{2\gamma}\delta$（sinc 型）的线性 $\delta$ 耦合。
+
+---
+
+#### CLF 1 — 状态空间 $\mathcal{S}_1$（对应 $\tilde{\omega}_2$，$\gamma$ 快速衰减型）
+
+$$V_1(\rho, \delta, \gamma) = \rho^2 + (\delta + \sin\gamma)^2 + 4\tan^2\frac{\gamma}{2}$$
+
+梯度：
+
+$$\nabla V_1 = \begin{bmatrix}
+2\rho \\
+2(\delta + \sin\gamma) \\
+2(\delta + \sin\gamma)\cos\gamma + 4\tan\frac{\gamma}{2}\left(1 + \tan^2\frac{\gamma}{2}\right)
+\end{bmatrix}^\top$$
+
+该 CLF 的特点是用 $(\delta + \sin\gamma)^2$ 替代独立的 $\delta^2$ 项，$\delta$ 和 $\gamma$ 通过 $\sin\gamma$ 耦合，且用 $4\tan^2\frac{\gamma}{2}$ 作为纯 $\gamma$ 惩罚。对应于 $\tilde{\omega}_2$ 中 $\frac{\cos\gamma}{(1+\tan^2(\gamma/2))^2}\delta$ 的 $\gamma$ 快速衰减型耦合。
+
+---
+
+#### CLF 2 — 状态空间 $\mathcal{S}_2$（对应 $\tilde{\omega}_3$，$\delta$ 增强型）
+
+$$V_2(\rho, \delta, \gamma) = \rho^2 + \delta^2 + \left(\gamma + \frac{1}{2}\arctan\!\left(4\tan\frac{\delta}{2}\right)\right)^2$$
+
+梯度：
+
+$$\nabla V_2 = \begin{bmatrix}
+2\rho \\
+2\delta + 2\left(\gamma + \frac{1}{2}\arctan\!\left(4\tan\frac{\delta}{2}\right)\right) \cdot \dfrac{1+\tan^2\frac{\delta}{2}}{1+16\tan^2\frac{\delta}{2}} \\
+2\left(\gamma + \frac{1}{2}\arctan\!\left(4\tan\frac{\delta}{2}\right)\right)
+\end{bmatrix}^\top$$
+
+该 CLF 的特点是用 $\frac{1}{2}\arctan(4\tan\frac{\delta}{2})$ 作为 $\delta$-$\gamma$ 耦合机制，$\arctan$ 函数将 $\tan\frac{\delta}{2}$ 映射回有限范围，在 $\delta$ 较大时增强耦合。对应于 $\tilde{\omega}_3$ 中 $2\frac{\sin 2\gamma}{2\gamma}(1+\tan^2\frac{\delta}{2})\tan\frac{\delta}{2}$ 的 $\delta$ 增强型耦合。
+
+---
+
+#### CLF 3 — 状态空间 $\mathcal{S}_3$（对应 $\tilde{\omega}_4$，综合调节型）
+
+定义辅助变量：
+
+$$A = 4\tan^2\frac{\delta}{2} + 4\tan^2\frac{\gamma}{2} + 1,\qquad B = 2\tan\frac{\delta}{2} + 2\tan\frac{\gamma}{2}$$
+
+则 CLF 为：
+
+$$V_3(\rho, \delta, \gamma) = \rho^2 + A^3 - 1 + B^2$$
+
+梯度：
+
+$$\nabla V_3 = \begin{bmatrix}
+2\rho \\
+12A^2 \tan\frac{\delta}{2}\!\left(1+\tan^2\frac{\delta}{2}\right) + 4\!\left(\tan\frac{\delta}{2}+\tan\frac{\gamma}{2}\right)\!\left(1+\tan^2\frac{\delta}{2}\right) \\
+12A^2 \tan\frac{\gamma}{2}\!\left(1+\tan^2\frac{\gamma}{2}\right) + 4\!\left(\tan\frac{\delta}{2}+\tan\frac{\gamma}{2}\right)\!\left(1+\tan^2\frac{\gamma}{2}\right)
+\end{bmatrix}^\top$$
+
+该 CLF 最为复杂，结合了 $\tan\frac{\delta}{2}$ 和 $\tan\frac{\gamma}{2}$ 的多项式和三次幂结构。$B^2 = (2\tan\frac{\delta}{2} + 2\tan\frac{\gamma}{2})^2$ 提供对称的 $\delta$-$\gamma$ 交叉耦合，而 $A^3$ 项提供全局约束。对应于 $\tilde{\omega}_4$ 中同时具备 $\gamma$ 快速衰减和 $\delta$ 增强的综合调节型耦合。
+
+---
+
+#### 四种 CLF 的 Lie 导数（统一形式）
+
+由于 $\mathbf{f}(\mathbf{x}) = \mathbf{0}$，Lie 导数的统一表达式为：
+
+$$L_f V = 0$$
+
+$$L_g V = \nabla V \cdot \mathbf{g} = \begin{bmatrix}
+-\dfrac{\partial V}{\partial\rho}\cos\gamma + \left(\dfrac{\partial V}{\partial\delta} + \dfrac{\partial V}{\partial\gamma}\right)\dfrac{\sin\gamma}{\rho}, & -\dfrac{\partial V}{\partial\gamma}
+\end{bmatrix}$$
+
+记：
+
+$$L_g V_1 = -\frac{\partial V}{\partial\rho}\cos\gamma + \left(\frac{\partial V}{\partial\delta} + \frac{\partial V}{\partial\gamma}\right)\frac{\sin\gamma}{\rho},\qquad L_g V_2 = -\frac{\partial V}{\partial\gamma}$$
+
+四种 CLF 代入各自的偏导数即可得到对应的 $L_g V$。
+
+---
+
+#### CLF 与 $\tilde{\omega}$ 变体的对应关系
+
+| CLF | 状态空间 | 对应控制律 | $\delta$-$\gamma$ 耦合机制 |
+|-----|---------|-----------|--------------------------|
+| $V_0$ | $\mathcal{S}$ | $\tilde{\omega}_1$ | $(\delta+\gamma)^2$ → 线性 $\delta$ + sinc 型 $\gamma$ |
+| $V_1$ | $\mathcal{S}_1$ | $\tilde{\omega}_2$ | $(\delta+\sin\gamma)^2$ → $\gamma$ 快速衰减 |
+| $V_2$ | $\mathcal{S}_2$ | $\tilde{\omega}_3$ | $\arctan(4\tan\frac{\delta}{2})$ → $\delta$ 增强 |
+| $V_3$ | $\mathcal{S}_3$ | $\tilde{\omega}_4$ | $B^2 + A^3$ → $\gamma$ 衰减 + $\delta$ 增强，综合调节 |
+
+#### 逆最优代价函数的通用构造
+
+给定 CLF $V_i$（$i = 0,1,2,3$）和控制律 $\mathbf{k}(\mathbf{x}) = [v_{\text{ref}}, \omega_{\text{ref}}]^\top$，取 $\mathbf{R} = \operatorname{diag}(r_1, r_2) \succ 0$，逆最优代价函数的构造公式为：
+
+$$J_i = \int_0^\infty \big[ l_i(\mathbf{x}) + \mathbf{u}^\top \mathbf{R} \mathbf{u} \big] \, dt$$
+
+状态代价 $l_i(\mathbf{x})$ 为：
+
+$$l_i(\mathbf{x}) = -L_g V_i \cdot \mathbf{k} - \frac{1}{2}\mathbf{k}^\top \mathbf{R} \mathbf{k} + \frac{1}{4} L_g V_i \,\mathbf{R}^{-1} (L_g V_i)^\top$$
+
+展开为标量形式：
+
+$$l_i = -\big(L_g V_{i,1} \cdot v_{\text{ref}} + L_g V_{i,2} \cdot \omega_{\text{ref}}\big) - \frac{1}{2}\big(r_1 v_{\text{ref}}^2 + r_2 \omega_{\text{ref}}^2\big) + \frac{1}{4}\!\left(\frac{(L_g V_{i,1})^2}{r_1} + \frac{(L_g V_{i,2})^2}{r_2}\right)$$
+
+因此，**代价密度（integrand）**为 $l_i(\mathbf{x}) + r_1 v^2 + r_2 \omega^2$，沿轨迹积分即得总代价。
+
 ### 2.4 验证第 2 节控制律的镇定性和逆最优性
 
 将第 2 节的控制律 $v = k_1\rho\cos\gamma$，$\omega = \frac{k_1}{2}\sin(2\gamma) + \tilde{\omega}$ 代入 $\dot{V}$：
@@ -271,3 +394,12 @@ $$l(\rho, \delta, \gamma) = -\dot{V}\big|_{\mathbf{u}=\mathbf{k}(\mathbf{x})} - 
 - **Sepulchre, R., Janković, M., & Kokotović, P. V.** (1997). *Constructive Nonlinear Control*. Springer, London.
 - **Todorovski, V., Kim, K. H., Astolfi, A., et al.** (2025). "Nonholonomic Robot Parking by Feedback—Part I: Modular Strict CLF Designs." *arXiv preprint arXiv:2511.15119*.
 - **Kim, K. H., Todorovski, V., & Krstić, M.** (2025). "Nonholonomic Robot Parking by Feedback—Part II: Nonmodular, Inverse Optimal, Adaptive, Prescribed/Fixed-Time and Safe Designs." *arXiv preprint arXiv:2511.15219*.
+
+
+
+| State-Space $\hat{\mathcal{S}}$ | CLF $V(\rho, \delta, \gamma)$ |
+|----------------------------------|--------------------------------|
+| $\mathcal{S}$                   | $\rho^2 + \frac{1}{2}(\delta^2 + \gamma^2 + 2)^2 - 2 + (\delta + \gamma)^2$ |
+| $\mathcal{S}_1$                 | $\rho^2 + (\delta + \sin\gamma)^2 + 4\tan^2\frac{\gamma}{2}$ |
+| $\mathcal{S}_2$                 | $\rho^2 + \delta^2 + \left(\gamma + \frac{1}{2}\arctan\!\left(4\tan\frac{\delta}{2}\right)\right)^2$ |
+| $\mathcal{S}_3$                 | $\rho^2 + \left(4\tan^2\frac{\delta}{2} + 4\tan^2\frac{\gamma}{2} + 1\right)^3 - 1 + \left(2\tan\frac{\delta}{2} + 2\tan\frac{\gamma}{2}\right)^2$ |

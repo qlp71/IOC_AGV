@@ -26,7 +26,10 @@ class Context:
     k3: float
     r1: float = 1.0
     r2: float = 1.0
+    w1: float = 1.0
+    w2: float = 1.0
     ctrl_law_idx: int = 0
+    is_sat: bool = False  # False for no saturation, True for tanh saturation
 
     # pytree support
     def tree_flatten(self):
@@ -40,7 +43,10 @@ class Context:
             self.k3,
             self.r1,
             self.r2,
+            self.w1,
+            self.w2,
             self.ctrl_law_idx,
+            self.is_sat,
         )
 
         aux = (
@@ -70,7 +76,10 @@ class Context:
             k3,
             r1,
             r2,
+            w1,
+            w2,
             ctrl_law_idx,
+            is_sat,
         ) = children
 
         return cls(
@@ -86,7 +95,10 @@ class Context:
             k3=k3,
             r1=r1,
             r2=r2,
+            w1=w1,
+            w2=w2,
             ctrl_law_idx=ctrl_law_idx,
+            is_sat=is_sat,
         )
     
 # ═══════════════════════════════════════════════════════════════
