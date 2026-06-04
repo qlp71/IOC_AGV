@@ -202,6 +202,8 @@ IOC 方法                           IGO 求解器
 - Sepulchre, R., Janković, M., & Kokotović, P. V. (1997). *Constructive Nonlinear Control*. Springer.
 - Freeman, R. A. & Kokotović, P. V. (2008). *Robust Nonlinear Control Design: State-Space and Lyapunov Techniques*. Birkhäuser.
 
+该项目的 IGO 求解器基于项目 [MGIGO](https://github.com/Konsteidinoeevich/MGIGO.git) 。
+
 ---
 
 ## 许可证
