@@ -341,7 +341,7 @@ def main():
     dt = 0.15
     b = 300
     b0 = 100
-    t0 = 200
+    t0 = 600
     iter_tot = 600
     frame_data, all_f_vals = generate_animation_data(
         total_iterations=iter_tot, frame_stride=5, seed=42,

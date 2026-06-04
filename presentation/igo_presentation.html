@@ -1,0 +1,1687 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IGO求解器介绍及其应用</title>
+
+    <!-- Reveal.js CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.6.0/dist/reveal.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.6.0/dist/theme/white.css">
+<style>
+.flowchart {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    font-size: 0.68em;
+}
+
+/* 标准流程框 */
+.process {
+    min-width: 520px;
+    padding: 12px 18px;
+    border: 2px solid #475569;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.03);
+    text-align: center;
+}
+
+/* 开始结束 */
+.terminal {
+    border-radius: 999px;
+    border: 2px solid #16a34a;
+}
+.decision {
+    position: relative;
+
+    width: 280px;
+    height: 100px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-weight: 600;
+}
+
+.decision::before {
+    content: "";
+
+    position: absolute;
+    inset: 0;
+
+    border: 2px solid #f59e0b;
+
+    transform: rotate(45deg);
+
+    z-index: -1;
+}
+
+/* 垂直箭头 */
+.arrow {
+    width: 2px;
+    height: 20px;
+    background: var(--highlight);
+    position: relative;
+}
+
+.arrow::after {
+    content: "";
+    position: absolute;
+    bottom: 0px;
+    left: -5px;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 8px solid var(--highlight);
+}
+</style>
+
+    <!-- MathJax -->
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true
+            },
+            options: {
+                skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+            }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        /* ── Academic Theme Overrides ── */
+        :root {
+            --r-heading-color: #1a3a5c;
+            --r-main-color: #2d2d2d;
+            --r-link-color: #2563eb;
+            --accent: #1e5a8a;
+            --accent-light: #e8f0f8;
+            --accent-dark: #0f3b5c;
+            --code-bg: #f5f7fa;
+            --border-color: #d0d7de;
+            --highlight: #d97706;
+        }
+
+        .reveal {
+            font-family: "Noto Serif CJK SC", "Source Han Serif SC", "SimSun", "STSong", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+            font-size: 31px;
+        }
+        .reveal h1 { font-size: 2.4em; font-weight: 700; }
+        .reveal h2 { font-size: 1.8em; font-weight: 600; color: var(--accent); }
+        .reveal h3 { font-size: 1.4em; font-weight: 600; color: var(--accent-dark); }
+        .reveal h4 { font-size: 1.15em; font-weight: 600; }
+
+        .reveal .slides section {
+            text-align: left;
+            padding: 16px 48px;
+        }
+        .reveal .slides .center-slide {
+            text-align: center;
+        }
+
+        /* ── Title Slide ── */
+        .title-slide h1 {
+            font-size: 2.6em;
+            margin-bottom: 0.3em;
+            color: var(--accent-dark);
+        }
+        .title-slide .subtitle {
+            font-size: 1.2em;
+            color: #555;
+            margin-bottom: 1.5em;
+        }
+        .title-slide .meta {
+            font-size: 0.8em;
+            color: #888;
+            margin-top: 2em;
+        }
+
+        /* ── Two-Column Layout ── */
+        .two-col {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+            justify-content: flex-start;
+        }
+        .two-col > div { flex: 1; text-align: left; }
+        .two-col.equal > div { flex: 1; }
+        .two-col.wide-left > div:first-child { flex: 2; }
+        .two-col.wide-left > div:last-child { flex: 1; }
+        .two-col.wide-right > div:first-child { flex: 1; }
+        .two-col.wide-right > div:last-child { flex: 2; }
+
+        /* ── Flowchart (loop-back style) ── */
+        .flowchart {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0;
+            font-size: 0.7em;
+            margin: 4px 80px 4px 0;
+        }
+        .flowchart .node {
+            background: var(--accent-light);
+            border: 1.5px solid var(--accent);
+            border-radius: 6px;
+            padding: 6px 18px;
+            text-align: center;
+            max-width: 560px;
+            width: fit-content;
+        }
+        .flowchart .node.start {
+            background: #e0f0e0;
+            border-color: #2d8a4e;
+            border-radius: 18px;
+        }
+        .flowchart .node.decision {
+            background: #fef3c700;
+            border-color: #d97706;
+            border-radius: 4px;
+        }
+        .flowchart .node.end {
+            background: #f0e0e0;
+            border-color: #b91c1c;
+            border-radius: 18px;
+        }
+        .flowchart .arrow-down {
+            font-size: 1.2em;
+            color: var(--accent);
+            line-height: 0.8;
+            margin: 0;
+        }
+        /* loop-back wrapper: lines on the right side */
+        .flowchart .loop-row {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+        .flowchart .loop-back {
+            position: absolute;
+            right: -72px;
+            top: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 56px;
+        }
+        .flowchart .loop-back .vline {
+            width: 2.5px;
+            background: var(--highlight);
+            flex: 1;
+        }
+        .flowchart .loop-back .arrow-head {
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-bottom: 12px solid var(--highlight);
+        }
+        .flowchart .loop-back .loop-label {
+            font-size: 0.8em;
+            font-weight: 700;
+            color: var(--highlight);
+            white-space: nowrap;
+            margin: 2px 0;
+        }
+
+        /* ── Horizontal Flow ── */
+        .hflow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin: 15px 0;
+        }
+        .hflow .step {
+            background: var(--accent-light);
+            border: 1.5px solid var(--accent);
+            border-radius: 8px;
+            padding: 12px 18px;
+            text-align: center;
+            font-size: 0.8em;
+            min-width: 100px;
+        }
+        .hflow .step.highlight {
+            background: #fef3c7;
+            border-color: #d97706;
+        }
+        .hflow .harrow {
+            font-size: 1.3em;
+            color: var(--accent);
+        }
+
+        /* ── Info Boxes ── */
+        .info-box {
+            background: var(--accent-light);
+            border-left: 4px solid var(--accent);
+            padding: 12px 18px;
+            margin: 12px 0;
+            border-radius: 0 8px 8px 0;
+            font-size: 0.85em;
+        }
+        .info-box.idea {
+            background: #fef9e7;
+            border-left-color: #d97706;
+        }
+        .info-box.theorem {
+            background: #f0fdf4;
+            border-left-color: #16a34a;
+        }
+        .info-box.important {
+            background: #fef2f2;
+            border-left-color: #dc2626;
+        }
+
+        /* ── Code Block ── */
+        .reveal pre {
+            background: var(--code-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.55em;
+            padding: 10px 14px;
+            box-shadow: none;
+        }
+        .reveal code {
+            font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+            font-size: 0.85em;
+        }
+
+        /* ── Tables ── */
+        .reveal table {
+            font-size: 0.75em;
+            margin: 10px auto;
+            border-collapse: collapse;
+        }
+        .reveal th {
+            background: var(--accent-dark);
+            color: white;
+            padding: 8px 14px;
+            font-weight: 600;
+        }
+        .reveal td {
+            padding: 6px 14px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .reveal tr:nth-child(even) td {
+            background: #f8fafc;
+        }
+
+        /* ── Image styling ── */
+        .reveal section img {
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            max-height: 520px;
+            margin: 8px auto;
+            display: block;
+        }
+        .reveal .img-caption {
+            text-align: center;
+            font-size: 0.65em;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        /* ── Small text ── */
+        .small { font-size: 0.7em; }
+        .smaller { font-size: 0.6em; }
+        .tiny { font-size: 0.5em; }
+
+        /* ── Tags / Badges ── */
+        .tag {
+            display: inline-block;
+            background: var(--accent);
+            color: white;
+            border-radius: 4px;
+            padding: 2px 10px;
+            font-size: 0.7em;
+            margin: 0 4px;
+        }
+        .tag.green { background: #16a34a; }
+        .tag.orange { background: #d97706; }
+
+        /* ── Comparison grid ── */
+        .cmp-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin: 12px 0;
+        }
+        .cmp-grid .cmp-card {
+            border: 1.5px solid var(--border-color);
+            border-radius: 8px;
+            padding: 14px 18px;
+        }
+        .cmp-grid .cmp-card.left {
+            border-left: 4px solid #dc2626;
+        }
+        .cmp-grid .cmp-card.right {
+            border-left: 4px solid #16a34a;
+        }
+        .cmp-grid .cmp-card h4 {
+            margin: 0 0 6px 0;
+        }
+
+        /* ── List enhancements ── */
+        .reveal ul { margin-left: 0.5em; }
+        .reveal li { margin: 6px 0; }
+        .reveal ul.checklist { list-style: none; }
+        .reveal ul.checklist li::before { content: "✓ "; color: #16a34a; font-weight: bold; }
+
+        /* ── Section divider ── */
+        .section-divider {
+            text-align: center !important;
+        }
+        .section-divider h2 {
+            font-size: 2.4em;
+            margin-bottom: 0.3em;
+        }
+        .section-divider .section-num {
+            font-size: 4em;
+            font-weight: 900;
+            color: var(--accent-light);
+            line-height: 1;
+        }
+
+        /* ── Figure grid ── */
+        .fig-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .fig-grid.col3 { grid-template-columns: 1fr 1fr 1fr; }
+        .fig-grid .fig-item { text-align: center; }
+        .fig-grid .fig-item img { max-height: 400px; }
+        .fig-grid .fig-item .fig-label { font-size: 0.65em; color: #666; margin-top: 4px; }
+
+        /* ── Step list ── */
+        .step-list { counter-reset: step; list-style: none; }
+        .step-list li { counter-increment: step; margin: 8px 0; padding-left: 40px; position: relative; }
+        .step-list li::before {
+            content: counter(step);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 28px;
+            height: 28px;
+            background: var(--accent);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75em;
+            font-weight: bold;
+        }
+
+        /* ── Slides with background accent ── */
+        .bg-accent {
+            background-color: var(--accent-light) !important;
+        }
+    </style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- TITLE SLIDE -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section class="center-slide title-slide">
+    <h1>MGIGO求解器介绍及其应用</h1>
+    <div class="subtitle">
+        Mixture Gaussian Information-Geometric Optimization<br>
+    </div>
+    <hr style="width: 60%; border-color: var(--accent-light); margin: 1.5em auto;">
+    <div class="meta">
+        <p>MGIGO &amp; Inverse Optimal Control</p>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- OUTLINE -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section class="center-slide">
+    <h2>目录</h2>
+    <div style="display: inline-block; text-align: left; font-size: 0.9em;">
+        <p><strong>第一部分</strong> &nbsp; 求解器工作原理</p>
+        <p style="margin-left: 1.5em; font-size: 0.85em; color: #666;">
+            问题背景 → 核心思想 → 算法流程 → 关键机制
+        </p>
+        <p><strong>第二部分</strong> &nbsp; 优化过程可视化</p>
+        <p style="margin-left: 1.5em; font-size: 0.85em; color: #666;">
+            测试案例展示 → 收敛过程分析
+        </p>
+        <p><strong>第三部分</strong> &nbsp; 逆最优控制与代价函数设计</p>
+        <p style="margin-left: 1.5em; font-size: 0.85em; color: #666;">
+            IOC理论 → 差速驱动机器人 → 代价函数构造
+        </p>
+        <p><strong>总结</strong></p>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- PART 1: SECTION DIVIDER -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section class="center-slide section-divider">
+    <div class="section-num">Part 1</div>
+    <h2>求解器工作原理</h2>
+    <p style="color: #888;">从黑盒优化到信息几何搜索</p>
+</section>
+
+<!-- 1.1 Problem Background -->
+<section>
+    <h3>问题背景：黑盒优化</h3>
+    <div class="two-col wide-right">
+        <div>
+            <div class="info-box">
+                <strong>核心问题</strong><br>
+                寻找使目标函数 $f(\mathbf{x})$ 最小的最优解 $\mathbf{x}^*$：
+                $$\mathbf{x}^* = \arg\min_{\mathbf{x}} f(\mathbf{x})$$
+            </div>
+            <p class="small" style="margin-top: 12px;">
+                <strong>挑战：</strong>
+            </p>
+            <ul class="small">
+                <li>$f$ 可能<strong>非凸、多模态</strong>（多个局部最优）</li>
+                <li>$f$ 可能<strong>不可导</strong>，甚至没有解析表达式</li>
+                <li>$\mathbf{x}$ 可能由多个<strong>语义独立的子块</strong>组成</li>
+            </ul>
+        </div>
+        <div>
+            <img src="../output_igo_test/cos_cos_test_contour.png"
+                 alt="多模态函数示例" style="max-height: 420px;">
+            <div class="img-caption">多模态目标函数示例：多个全局最优点分散在参数空间中</div>
+        </div>
+    </div>
+</section>
+
+<!-- 1.2 Core Idea -->
+<section>
+    <h3>核心思想：把优化变成"猜分布"</h3>
+    <div class="cmp-grid">
+        <div class="cmp-card left">
+            <h4>传统优化方法</h4>
+            <p class="small">直接操作候选解 $\mathbf{x}$<br>梯度下降、牛顿法等</p>
+            <p class="small" style="color: #dc2626;">⚠ 需要梯度信息<br>⚠ 容易陷入局部最优</p>
+        </div>
+        <div class="cmp-card right">
+            <h4>IGO 方法</h4>
+            <p class="small">维护一个<strong>搜索分布</strong> $q(\mathbf{x})$<br>让分布逐渐"浓缩"到最优解附近</p>
+            <p class="small" style="color: #16a34a;">✓ 无需梯度<br>✓ 多模态探索<br>✓ 不确定性量化</p>
+        </div>
+    </div>
+    <div class="info-box idea" style="margin-top: 16px;">
+        <strong>关键洞察：</strong>不去直接找最优的 $\mathbf{x}$，而是用<strong>多个高斯分布（混合模型）</strong>覆盖搜索空间，逐步将概率质量集中到最有希望的区域。
+    </div>
+</section>
+
+<!-- 1.3 Why Gaussian Mixture -->
+<section>
+    <h3>为什么使用高斯混合模型？</h3>
+    <div class="two-col equal">
+        <div>
+            <p><strong>多模态探索</strong></p>
+            <p class="small">多个高斯分量可以同时追踪多个有希望的区域，不容易陷入局部最优</p>
+            <div style="text-align: center; margin: 10px 0;">
+                <div style="display: inline-block; width: 50px; height: 50px; border-radius: 50%; background: radial-gradient(circle, #1e5a8a 0%, transparent 70%); margin: 0 8px;"></div>
+                <div style="display: inline-block; width: 40px; height: 40px; border-radius: 50%; background: radial-gradient(circle, #1e5a8a 0%, transparent 70%); margin: 0 8px;"></div>
+                <div style="display: inline-block; width: 55px; height: 55px; border-radius: 50%; background: radial-gradient(circle, #1e5a8a 0%, transparent 70%); margin: 0 8px;"></div>
+            </div>
+        </div>
+        <div>
+            <p><strong>不确定性量化</strong></p>
+            <p class="small">分布的协方差自然地表达搜索的"信心"：
+                <br>宽椭圆 = 还在探索
+                <br>窄椭圆 = 已经锁定</p>
+            <div style="text-align: center; margin: 10px 0;">
+                <div style="display: inline-block; width: 70px; height: 70px; border: 2px dashed #1e5a8a; border-radius: 50%; margin: 0 8px;"></div>
+                <span style="font-size: 1.5em;">→</span>
+                <div style="display: inline-block; width: 30px; height: 30px; border: 2px solid #d97706; border-radius: 50%; margin: 0 8px;"></div>
+            </div>
+        </div>
+    </div>
+    <p class="small" style="margin-top: 12px;">每个高斯分量由三个参数定义：<strong>均值 $\boldsymbol{\mu}_k$</strong>（中心位置）、<strong>精度矩阵 $\mathbf{S}_k$</strong>（散布形状，协方差的逆）、<strong>混合权重 $\pi_k$</strong>（被选中的概率）</p>
+</section>
+
+<!-- 1.4 Algorithm Flow -->
+<section>
+    <h3>算法流程总览</h3>
+
+    <div class="two-col equal">
+
+        <!-- 左侧：流程图 -->
+        <div class="left-flow" style="
+            font-size: 0.65em;
+            display: flex;
+            flex-direction: column;
+            align-items: center;">
+
+            <div class="process terminal">
+                输入：目标函数 $f$，迭代次数 $T$，样本数 $B$
+            </div>
+
+            <div class="arrow"></div>
+
+            <div class="process">
+                初始化混合高斯参数
+            </div>
+
+            <div class="arrow"></div>
+
+            <!-- loop start -->
+            <div id="step1" class="process"
+                style="border-color:var(--highlight);">
+                <strong>步骤1：采样</strong> 从混合高斯中生成 $B$ 个候选解
+            </div>
+
+            <div class="arrow"></div>
+
+            <div class="process">
+                <strong>步骤2：评估与筛选</strong>
+                计算目标函数并选择精英样本
+            </div>
+
+            <div class="arrow"></div>
+
+            <div class="process">
+                <strong>步骤3：自然梯度更新</strong>
+                更新 $\boldsymbol{\mu}, \mathbf{S}, \boldsymbol{\pi}$
+            </div>
+
+            <div class="arrow"></div>
+
+            <div class="process">
+                <strong>步骤4：周期性重置</strong>
+                每 $T_0$ 代重置精度矩阵
+            </div>
+
+            <div class="arrow"></div>
+            <svg width="280" height="80">
+                <polygon
+                    points="140,0 280,40 140,80 0,40"
+                    fill="none"
+                    stroke="#f59e0b"
+                    stroke-width="2"
+                />
+                <text
+                    x="140"
+                    y="44"
+                    text-anchor="middle"
+                    dominant-baseline="middle"
+                    fill="black">
+                    达到 T 次迭代？
+                </text>
+            </svg>
+
+            <div class="arrow"></div>
+
+            <div class="process terminal">
+                输出最终参数
+            </div>
+
+            <svg style="
+            position:absolute;
+            top:0;
+            left:-285;
+            width:100%;
+            height:100%;
+            pointer-events:none;">
+
+            <defs>
+            <marker id="arrowhead"
+                    markerWidth="6"
+                    markerHeight="3"
+                    refX="3"
+                    refY="1"
+                    orient="auto">
+                <polygon points="0 0, 2 2, 0 4"
+                        fill="var(--highlight)" />
+            </marker>
+            </defs>
+
+            <path d="
+            M 784 603
+            L 984 603
+            L 988 224
+            L 648 224"
+            stroke="var(--highlight)"
+            stroke-width="1.5"
+            fill="none"
+            marker-end="url(#arrowhead)" />
+
+            <text x="800" y="590"
+            fill="var(--highlight)"
+            font-size="18">
+            否 </text>
+
+            <text x="670" y="655"
+            fill="#16a34a"
+            font-size="18">
+            是 </text>
+
+            </svg>
+            
+        </div>
+
+        <!-- 右侧：两张图 -->
+        <div class="right-images">
+            <img src="../figures/block_wize1.png" alt="分块示例" style="max-height: 300px; margin-bottom: 12px;">
+
+            <img src="../figures/block_wise2.png" alt="分块示例2" style="max-height: 300px;">
+        </div>
+
+    </div>
+
+</section>
+<!-- 1.5 Sampling -->
+<section>
+    <h3>步骤1-2：采样与精英筛选</h3>
+    <div class="two-col">
+        <div>
+            <h4>采样（掷飞镖）</h4>
+            <ol class="small">
+                <li><strong>选分量</strong>：按 $\text{Categorical}(\pi_1,\ldots,\pi_K)$ 随机选一个高斯分量</li>
+                <li><strong>采样点</strong>：从选中高斯 $\mathcal{N}(\boldsymbol{\mu}_k, \mathbf{S}_k^{-1})$ 中采一个点</li>
+            </ol>
+            <p class="small">使用 Cholesky 分解高效采样：<br>$\mathbf{x} = \boldsymbol{\mu} + \mathbf{L}^{-\top}\mathbf{z}$，$\mathbf{z} \sim \mathcal{N}(0,\mathbf{I})$<br>其中 $\mathbf{S} = \mathbf{L}\mathbf{L}^\top$</p>
+        </div>
+        <div>
+            <h4>精英筛选（优胜劣汰）</h4>
+            <ol class="small">
+                <li>对所有 $B$ 个候选解计算 $f(\mathbf{x}_i)$</li>
+                <li>按 $f$ 值从小到大排序</li>
+                <li>选前 $B_0$ 个作为<strong>精英样本</strong></li>
+            </ol>
+            <div class="info-box" style="margin-top: 10px;">
+                <strong>默认参数：</strong>$B = 300$（采样数），$B_0 = 100$（精英数）<br>
+                精英比例 $B_0/B = 1/3$，控制选择压力
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 1.6 Natural Gradient Update -->
+<section>
+    <h3>步骤3：自然梯度更新（核心）</h3>
+    <p class="small">有了精英样本后，沿着<strong>自然梯度</strong>方向更新分布参数，使搜索分布向精英靠拢。</p>
+
+    <div class="info-box idea">
+        <strong>为什么用自然梯度？</strong><br>
+        普通梯度依赖欧氏距离，对参数化方式敏感。自然梯度 $\tilde{\nabla} f = \mathbf{F}^{-1} \nabla f$ 使用 KL 散度定义的"信息距离"，给出了<strong>在分布空间中每单位 KL 变化下，目标函数下降最快的方向</strong>。
+    </div>
+
+    <div class="hflow" style="font-size: 1.0em;">
+        <div class="step"><strong>E-step</strong><br>责任计算<br>$a_{kb}$</div>
+        <div class="harrow">→</div>
+        <div class="step"><strong>M-step S</strong><br>精度矩阵更新<br>$\mathbf{S}_k^{\text{new}}$</div>
+        <div class="harrow">→</div>
+        <div class="step"><strong>M-step μ</strong><br>均值更新<br>$\boldsymbol{\mu}_k^{\text{new}}$</div>
+        <div class="harrow">→</div>
+        <div class="step"><strong>M-step π</strong><br>权重更新<br>$\pi_k^{\text{new}}$</div>
+    </div>
+    <p class="media" style="margin-top: 8px;">更新结构类似 EM 算法：E-step 计算责任 → M-step 更新参数。整个过程通过 JAX 的 <code>vmap</code> 在各分量和各 block 间并行执行。</p>
+</section>
+
+<!-- 1.7 Update Details -->
+<section>
+    <h3>自然梯度更新的数学细节</h3>
+    <div class="two-col wide-left">
+        <div>
+            <p><strong>第一步：责任计算</strong></p>
+            <p class="smaller">
+                $$a_{kb} = \frac{p(\mathbf{x}_b | \boldsymbol{\mu}_k, \mathbf{S}_k)}{\sum_j \pi_j \cdot p(\mathbf{x}_b | \boldsymbol{\mu}_j, \mathbf{S}_j)}$$
+                精英样本"属于"分量 $k$ 的后验概率
+            </p>
+            <p><strong>第二步：精度矩阵更新</strong></p>
+            <p class="smaller">
+                $$\mathbf{S}_k^{\text{new}} = \mathbf{S}_k - \alpha \sum_b w_b a_{kb} (\mathbf{S}_k \mathbf{d}_{kb} \mathbf{d}_{kb}^\top \mathbf{S}_k - \mathbf{S}_k)$$
+                精英集中的方向 → 精度增大（协方差缩小）
+            </p>
+        </div>
+        <div>
+            <p><strong>第三步：均值更新</strong></p>
+            <p class="smaller">
+                $$\boldsymbol{\mu}_k^{\text{new}} = \boldsymbol{\mu}_k + \alpha (\mathbf{S}_k^{\text{new}})^{-1} \sum_b w_b a_{kb} \mathbf{S}_k \mathbf{d}_{kb}$$
+                均值被拉向精英的加权平均方向
+            </p>
+            <p><strong>第四步：权重更新</strong></p>
+            <p class="smaller">
+                $$\pi \leftarrow \text{softmax}\left(\log\frac{\pi_{1:K-1}}{\pi_K} + \alpha \sum_b w_b(a_{1:K-1,b} - a_{K,b})\right)$$
+                解释力强的分量获得更多权重
+            </p>
+        </div>
+    </div>
+    <p class="smaller" style="margin-top: 8px; color: #888;">其中 $\mathbf{d}_{kb} = \mathbf{x}_b - \boldsymbol{\mu}_k$，$w_b = 1/B$，$\alpha$ 为学习率</p>
+</section>
+
+<!-- 1.8 Periodic Reset -->
+<section>
+    <h3>步骤4：周期性重置 —— 防止过早收敛</h3>
+    <div class="two-col wide-right">
+        <div>
+            <p class="small">每 $T_0$ 次迭代，将<strong>精度矩阵重置为单位矩阵</strong>，混合权重重置为均匀分布（但<strong>保留均值</strong>）。</p>
+            <div class="info-box important">
+                <strong>直觉：</strong>如果搜索过早缩成很小的区域（精度过高），可能错失更远处更好的解。定期"松开"协方差 = 重新开始探索，但保留已学到的大致位置。
+            </div>
+            <p class="small">这是<strong>探索-利用平衡</strong>的关键策略。</p>
+        </div>
+        <div>
+            <div style="text-align: center;">
+                <p class="small"><strong>无重置</strong></p>
+                <div style="width: 200px; height: 10px; background: linear-gradient(to right, #1e5a8a, #eee); margin: 0 auto; border-radius: 5px;"></div>
+                <p class="small" style="color: #dc2626;">搜索范围过早收缩，停滞在局部最优</p>
+                <p class="small" style="margin-top: 16px;"><strong>有重置</strong></p>
+                <div style="width: 200px; height: 10px; background: repeating-linear-gradient(to right, #1e5a8a 0px, #1e5a8a 30px, #eee 30px, #eee 40px); margin: 0 auto; border-radius: 5px;"></div>
+                <p class="small" style="color: #16a34a;">定期重新扩展搜索，找到全局最优</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 1.9 Blockwise Mechanism -->
+<section>
+    <h3>分块（Blockwise）机制</h3>
+    <div class="two-col wide-right">
+        <div>
+            <p class="small">当优化变量可自然分成多个语义独立的子块时，<strong>每个子块维护独立的混合高斯分布</strong>，评估时组合。</p>
+            <div style="text-align: center; margin: 12px 0;">
+                <div style="display: flex; gap: 12px; justify-content: center; font-size: 0.65em;">
+                    <div style="border: 1.5px solid var(--accent); border-radius: 6px; padding: 8px;">
+                        Block 1 (3D)<br>K个高斯<br>$S_1 [D_1,D_1]$
+                    </div>
+                    <div style="border: 1.5px solid var(--accent); border-radius: 6px; padding: 8px;">
+                        Block 2 (2D)<br>K个高斯<br>$S_2 [D_2,D_2]$
+                    </div>
+                    <div style="border: 1.5px solid var(--accent); border-radius: 6px; padding: 8px;">
+                        Block N (4D)<br>K个高斯<br>$S_N [D_N,D_N]$
+                    </div>
+                </div>
+                <p class="tiny">↓ 组合为完整向量 $\mathbf{x} = [\mathbf{x}_1 | \mathbf{x}_2 | \cdots | \mathbf{x}_N]$ → 统一评估 $f(\mathbf{x})$ → 各 block 独立更新</p>
+            </div>
+        </div>
+        <div>
+            <p><strong>优势：</strong></p>
+            <ul class="small">
+                <li><strong>维度灾难缓解</strong>：每个 block 协方差矩阵 $D_i \times D_i$，而非总维度平方</li>
+                <li><strong>语义独立性</strong>：不同物理含义的参数不被不当耦合</li>
+                <li><strong>并行化</strong>：JAX <code>vmap</code> 实现各 block 并行更新</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<!-- 1.10 Key Parameters -->
+<section>
+    <h3>关键参数速查</h3>
+    <table>
+        <thead>
+            <tr><th>参数</th><th>符号</th><th>默认值</th><th>作用</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>分量数</td><td>$K$</td><td>5</td><td>高斯混合的分量个数，越大探索能力越强</td></tr>
+            <tr><td>样本数</td><td>$B$</td><td>300</td><td>每轮采样的候选解数量</td></tr>
+            <tr><td>精英数</td><td>$B_0$</td><td>100</td><td>每轮保留的精英样本数</td></tr>
+            <tr><td>学习率</td><td>$\alpha$</td><td>0.15</td><td>自然梯度步长，太大不稳定，太小收敛慢</td></tr>
+            <tr><td>重置周期</td><td>$T_0$</td><td>200</td><td>多少代后重置精度矩阵</td></tr>
+            <tr><td>总迭代</td><td>$T$</td><td>600</td><td>总的迭代轮数</td></tr>
+        </tbody>
+    </table>
+    <div class="info-box" style="margin-top: 12px;">
+        <strong>技术实现：</strong>全 JAX 实现，支持 <code>jit</code> 编译和 GPU 加速；使用 <code>lax.scan</code> 将整个迭代编译为单个 XLA 计算图；Cholesky 参数化保证精度矩阵始终正定。
+    </div>
+</section>
+
+<!-- 1.11 Algorithm Family -->
+<section>
+    <h3>算法定位</h3>
+    <div class="two-col equal">
+        <div>
+            <p><strong>IGO 算法家族</strong></p>
+            <ul class="small">
+                <li><strong>CMA-ES</strong>：同样维护高斯搜索分布，更新规则不同</li>
+                <li><strong>NES</strong>：直接使用自然梯度更新搜索分布</li>
+                <li><strong>EM 算法</strong>：MGIGO 的更新结构类似 EM</li>
+            </ul>
+        </div>
+        <div>
+            <p><strong>MGIGO 的独特之处</strong></p>
+            <ul class="small">
+                <li><span class="tag">混合高斯</span> 多模态探索</li>
+                <li><span class="tag">精英选择</span> 优胜劣汰</li>
+                <li><span class="tag">自然梯度</span> 信息几何最优方向</li>
+                <li><span class="tag green">分块机制</span> 维度解耦</li>
+            </ul>
+        </div>
+    </div>
+    <p class="small" style="margin-top: 12px; text-align: center; color: #888;">
+        这三个要素的组合使 MGIGO 特别适合多模态、中等维度的黑盒优化问题
+    </p>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- PART 2: SECTION DIVIDER -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section class="center-slide section-divider">
+    <div class="section-num">Part 2</div>
+    <h2>优化过程可视化</h2>
+    <p style="color: #888;">从搜索分布到最优解的迭代过程</p>
+</section>
+
+<!-- 2.1 Test Cases Overview -->
+<section>
+    <h3>六种测试案例</h3>
+    <p class="small">以下展示 MGIGO 在不同类型目标函数上的表现。每张图展示目标函数的<strong>指数变换</strong> $e^{-f(\mathbf{x}) \cdot 0.05}$（越亮 = $f$ 越小 = 越优）。</p>
+    <div class="fig-grid col3">
+        <div class="fig-item">
+            <p class="smaller">$$f(x_1, x_2) = -\cos\left(\frac{\pi x_1}{4}\right) \cdot \cos\left(\frac{\pi x_2}{4}\right)$$</p>
+            <img src="../output_igo_test/cos_cos_test_contour.png" alt="余弦乘积">
+            <div class="fig-label">余弦乘积（多模态）</div>
+        </div>
+        <div class="fig-item">
+            <p class="smaller">$$f(x_1, x_2) = \frac{2(x_1+x_2-2)^2 + (x_1-x_2)^2}{10}$$ </p>
+            <img src="../output_igo_test/quadratic_test1_contour.png" alt="二次型">
+            <div class="fig-label">二次型（凸函数）</div>
+        </div>
+        <div class="fig-item">
+            <p class="smaller">$$f(x_1, x_2) = \frac{20(x_1+x_2-2)^2 + (x_1-x_2)^2}{10}$$</p>
+            <img src="../output_igo_test/quadratic_test2_contour.png" alt="各向异性二次型">
+            <div class="fig-label">各向异性二次型</div>
+        </div>
+    </div>
+</section>
+<section>
+    <h3>六种测试案例</h3>
+    <p class="small">以下展示 MGIGO 在$f(x_1, x_2) = \frac{2(x_1+x_2-2)^2 + (x_1-x_2)^2}{10}$函数上的表现，罚函数用<strong>线性斜坡+阶梯</strong>构成。</p>
+    <div class="fig-grid col3">
+        <div class="fig-item">
+            <p class="smaller">$$ \{ (x_1, x_2) \in \mathbb{R}^2 \mid x_1 - x_2 \geq 2 \} $$ </p>
+            <img src="../output_igo_test/quadratic_half_plane_test_contour.png" alt="半平面约束">
+            <div class="fig-label">半平面约束</div>
+        </div>
+        <div class="fig-item">
+            <p class="smaller">$$ \{ (x_1, x_2) \in \mathbb{R}^2 \mid |x_1 - x_2 - 2| \leq 0.3 \} $$ </p>
+            <img src="../output_igo_test/quadratic_linear_test_contour.png" alt="线性走廊">
+            <div class="fig-label">线性走廊约束</div>
+        </div>
+        <div class="fig-item">
+            <p class="smaller">$$ \{ (x_1, x_2) \in \mathbb{R}^2 \mid | x_1^2 + (x_2+1)^2 - 16 | \leq 3 \} $$ </p>
+            <img src="../output_igo_test/quadratic_circle_test_contour.png" alt="环形约束">
+            <div class="fig-label">环形约束</div>
+        </div>
+    </div>
+</section>
+
+<!-- 2.2 Cos Product Details -->
+<section>
+    <h3>案例1：余弦乘积（多模态）</h3>
+    <div class="two-col wide-right">
+        <div>
+            <p class="smaller">$$f(x_1, x_2) = -\cos\left(\frac{\pi x_1}{4}\right) \cdot \cos\left(\frac{\pi x_2}{4}\right)$$</p>
+            <ul class="small">
+                <li>高度多模态，多个等深全局最优</li>
+                <li>考验<strong>同时追踪多个模态</strong>的能力</li>
+                <li>MGIGO 的多个高斯分量可分别锁定不同谷底</li>
+            </ul>
+            <p class="small">
+                📹 <a href="../output_igo_test/cos_cos_test_with_reset.mp4">优化过程视频（有重置）</a><br>
+                📹 <a href="../output_igo_test/cos_igo_test_no_reset.mp4">优化过程视频（无重置）</a>
+            </p>
+        </div>
+        <div>
+            <img src="../output_igo_test/cos_cos_test_contour.png" alt="cos_cos">
+        </div>
+    </div>
+</section>
+
+<section>
+    <h3>案例1：余弦乘积（多模态）</h3>
+    <div class="two-col">
+        <div>
+        <div style="text-align:left;">
+            <h4>cos X cos 无重置</h4>
+        </div>
+            <video controls style="display:block;max-height:440px;margin: 0;">
+                <source src="../output_igo_test/cos_cos_test_no_reset.mp4" type="video/mp4" style="display:block;max-height:440px;margin: 0;" alt="优化过程视频（无重置）">
+            </video>
+        </div>
+        <div>
+        <div style="text-align:left;">
+            <h4>cos X cos 有重置</h4>
+        </div>
+            <video controls style="display:block;max-height:440px;margin: 0;">
+                <source src="../output_igo_test/cos_cos_test_with_reset.mp4" type="video/mp4" style="display:block;max-height:440px;margin: 0;" alt="优化过程视频（有重置）">
+            </video>
+        </div>
+    </div>
+</section>
+
+<!-- 2.3 Quadratic Cases -->
+<section>
+    <h3>案例2-3：凸函数与各向异性</h3>
+    <div class="two-col equal">
+        <div style="text-align:left;">
+            <h4>二次型（凸函数）</h4>
+            <!-- <p class="smaller">$$f = \frac{2(x_1+x_2-2)^2 + (x_1-x_2)^2}{10}$$ </p> -->
+            <img src="../output_igo_test/quadratic_test1_contour.png" style="display:block;max-height:440px;margin: 0;">
+            <p class="small">全局最优在 $(1,1)$<br>检验<strong>收敛速度和精度</strong></p>
+            <p class="tiny">📹 <a href="../output_igo_test/quadratic1_test.mp4">优化过程视频</a></p>
+        </div>
+        <div style="text-align:left;">
+            <h4>各向异性二次型</h4>
+            <!-- <p class="smaller">$$f = \frac{20(x_1+x_2-2)^2 + (x_1-x_2)^2}{10}$$</p> -->
+            <img src="../output_igo_test/quadratic_test2_contour.png" style="display:block;max-height:440px;margin: 0;">
+            <p class="small">$x_1+x_2$ 方向权重 ×20<br>形成<strong>狭长山谷</strong></p>
+            <p class="tiny">📹 <a href="../output_igo_test/quadratic_test2.mp4">优化过程视频</a></p>
+        </div>
+    </div>
+</section>
+
+
+<!-- 2.3 Quadratic Cases -->
+<section>
+    <h3>案例2-3：凸函数与各向异性</h3>
+    <div class="two-col equal">
+        <div style="text-align:left;">
+            <h4>二次型（凸函数）</h4>
+            <p class="smaller">$$f = \frac{2(x_1+x_2-2)^2 + (x_1-x_2)^2}{10}$$ </p>
+            <video controls autoplay loop muted style="display:block;max-height:440px;margin: 0;">
+                <source src="../output_igo_test/quadratic1_test.mp4" type="video/mp4">
+            </video>
+            <!-- <p class="small">全局最优在 $(1,1)$<br>检验<strong>收敛速度和精度</strong></p> -->
+            <!-- <p class="tiny">📹 <a href="../output_igo_test/quadratic1_test.mp4">优化过程视频</a></p> -->
+        </div>
+        <div style="text-align:left;">
+            <h4>各向异性二次型</h4>
+            <p class="smaller">$$f = \frac{20(x_1+x_2-2)^2 + (x_1-x_2)^2}{10}$$</p>
+            <video controls autoplay loop muted style="display:block;max-height:440px;margin: 0;">
+                <source src="../output_igo_test/quadratic_test2.mp4" type="video/mp4">
+            </video>
+            <!-- <p class="small">$x_1+x_2$ 方向权重 ×20<br>形成<strong>狭长山谷</strong></p> -->
+            <!-- <p class="tiny">📹 <a href="../output_igo_test/quadratic_test2.mp4">优化过程视频</a></p> -->
+        </div>
+    </div>
+</section>
+
+<!-- 2.4 Constrained Cases -->
+<section>
+    <h3>案例4-6：约束优化</h3>
+    <div class="two-col equal">
+        <div>
+            <h4>半平面约束</h4>
+            <p class="smaller">$$ \{ (x_1, x_2) \in \mathbb{R}^2 \mid x_1 - x_2 \geq 2 \} $$ </p>
+            <img src="../output_igo_test/quadratic_half_plane_test_contour.png" style="max-height:380px;">
+            <p class="small">一侧线性斜坡+阶梯，另一侧二次型<br>考验跨越<strong>不连续边界</strong>的能力</p>
+            <p class="tiny">📹 <a href="../output_igo_test/quadratic_half_plane_test.mp4">优化过程视频</a></p>
+        </div>
+        <div>
+            <h4>线性走廊约束</h4>
+            <p class="smaller">$$ \{ (x_1, x_2) \in \mathbb{R}^2 \mid |x_1 - x_2 - 2| \leq 0.3 \} $$ </p>
+            <img src="../output_igo_test/quadratic_linear_test_contour.png" style="max-height:380px;">
+            <p class="small">窄带内平滑二次型，两侧线性斜坡+阶梯，<br>考验<strong>线性约束</strong>搜索能力</p>
+            <p class="tiny">📹 <a href="../output_igo_test/quadratic_linear_test.mp4">优化过程视频</a></p>
+        </div>
+        <div>
+            <h4>环形约束</h4>
+            <p class="smaller">$$ \{ (x_1, x_2) \in \mathbb{R}^2 \mid | x_1^2 + (x_2+1)^2 - 16 | \leq 3 \} $$ </p>
+            <img src="../output_igo_test/quadratic_circle_test_contour.png" style="max-height:380px;">
+            <p class="small">可行域为圆环，圆环外是线性斜坡+阶梯，<br>考验<strong>非线性约束</strong>处理</p>
+            <p class="tiny">📹 <a href="../output_igo_test/quadratic_circle_test_with_reset.mp4">优化过程视频</a></p>
+        </div>
+    </div>
+</section>
+
+<!-- 2.4 Constrained Cases -->
+<section>
+    <h3>案例4-6：约束优化</h3>
+    <div class="two-col equal">
+        <div>
+            <h4>半平面约束</h4>
+            <p class="smaller">$$ \{ (x_1, x_2) \in \mathbb{R}^2 \mid x_1 - x_2 \geq 2 \} $$ </p>
+            <video controls autoplay loop muted style="display:block;max-height:380px;margin: 0;">
+                <source src="../output_igo_test/quadratic_half_plane_test.mp4" type="video/mp4">
+            </video>
+            <p class="small">一侧线性斜坡+阶梯，另一侧二次型<br>考验跨越<strong>不连续边界</strong>的能力</p>
+        </div>
+        <div>
+            <h4>线性走廊约束</h4>
+            <p class="smaller">$$ \{ (x_1, x_2) \in \mathbb{R}^2 \mid |x_1 - x_2 - 2| \leq 0.3 \} $$ </p>
+            <video controls autoplay loop muted style="display:block;max-height:380px;margin: 0;">
+                <source src="../output_igo_test/quadratic_linear_test.mp4" type="video/mp4">
+            </video>
+            <p class="small">窄带内平滑二次型，两侧线性斜坡+阶梯，<br>考验<strong>线性约束</strong>搜索能力</p>
+        </div>
+        <div>
+            <h4>环形约束</h4>
+            <p class="smaller">$$ \{ (x_1, x_2) \in \mathbb{R}^2 \mid | x_1^2 + (x_2+1)^2 - 16 | \leq 3 \} $$ </p>
+            <video controls autoplay loop muted style="display:block;max-height:380px;margin: 0;">
+                <source src="../output_igo_test/quadratic_circle_test_with_reset.mp4" type="video/mp4">
+            </video>
+            <p class="small">可行域为圆环，圆环外是线性斜坡+阶梯，<br>考验<strong>非线性约束</strong>处理</p>
+        </div>
+    </div>
+</section>
+
+<!-- 2.5 Animation Legend -->
+<section>
+    <h3>优化动画图例说明</h3>
+    <div class="two-col">
+        <div>
+            <table>
+                <thead><tr><th>元素</th><th>含义</th></tr></thead>
+                <tbody>
+                    <tr><td style="color: #3b82f6;">⬤ 蓝色等高线</td><td>$e^{-f \cdot 0.05}$ 变换（亮 = 好）</td></tr>
+                    <tr><td style="color: #6b7280;">⬤ 灰色散点</td><td>当前轮采样的候选解</td></tr>
+                    <tr><td style="color: #f59e0b;">◆ 橙色菱形</td><td>各高斯分量的均值 $\boldsymbol{\mu}_k$</td></tr>
+                    <tr><td style="color: #eab308;">⭐ 金色五角星</td><td>当前最佳分量的均值</td></tr>
+                    <tr><td style="color: #f97316;">⬤ 橙色椭圆</td><td>各分量 $3\sigma$ 等概率椭圆</td></tr>
+                    <tr><td>⬤ 黑色虚线椭圆</td><td>最佳分量 $3\sigma$ 椭圆</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div>
+            <p><strong>收敛过程的三个特征：</strong></p>
+            <ol class="small">
+                <li>橙色椭圆逐渐缩小 → 搜索从"广撒网"变为"精准打击"</li>
+                <li>散点向亮区聚集 → 候选解质量不断提高</li>
+                <li>多个菱形分散在不同谷底 → 多模态探索能力</li>
+            </ol>
+            <div class="info-box" style="margin-top: 12px;">
+                <strong>关键观察：</strong>随着迭代进行，分布的协方差（椭圆大小）逐渐缩小，"不确定性"降低，"信心"增强——这正是 IGO 方法的核心优势：<strong>搜索过程的每个阶段都有明确的不确定性量化</strong>。
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 2.6 Convergence Demo (screenshots to avoid video embedding issues) -->
+<section>
+    <h3>优化过程示意：余弦乘积函数</h3>
+    <p class="small">以下展示 MGIGO 在不同迭代阶段的搜索分布状态：</p>
+    <div style="text-align: center;">
+        <div class="hflow" style="font-size: 1.0em;">
+            <div class="step">
+                <strong>$t=0$</strong><br>
+                <span style="color:#888;">初始化</span><br>
+                椭圆大而分散<br>广泛探索
+            </div>
+            <div class="harrow">→</div>
+            <div class="step">
+                <strong>$t=100$</strong><br>
+                <span style="color:#888;">初步收敛</span><br>
+                椭圆开始缩小<br>向亮区聚集
+            </div>
+            <div class="harrow">→</div>
+            <div class="step">
+                <strong>$t=300$</strong><br>
+                <span style="color:#888;">精细搜索</span><br>
+                椭圆进一步缩小<br>锁定最优区域
+            </div>
+            <div class="harrow">→</div>
+            <div class="step highlight">
+                <strong>$t=600$</strong><br>
+                <span style="color:#888;">最终收敛</span><br>
+                精确锁定<br>多个全局最优点
+            </div>
+        </div>
+        <p class="small" style="margin-top: 12px;">
+            📹 完整优化过程请查看视频：
+            <a href="../output_igo_test/cos_cos_test_with_reset.mp4">余弦乘积（有重置）</a> |
+            <a href="../output_igo_test/quadratic1_test.mp4">二次型</a> |
+            <a href="../output_igo_test/quadratic_linear_test.mp4">线性走廊</a> |
+            <a href="../output_igo_test/quadratic_circle_test_with_reset.mp4">环形约束</a>
+        </p>
+    </div>
+</section>
+
+<!-- 2.7 Reset Comparison -->
+<section>
+    <h3>重置机制的效果对比</h3>
+    <div class="two-col equal">
+        <div>
+            <h4>无重置</h4>
+            <p class="small">搜索范围过早收缩，<br>可能停滞在局部最优</p>
+            <p class="tiny">📹 <a href="../output_igo_test/cos_igo_test_no_reset.mp4">无重置优化视频</a></p>
+            <div class="info-box important" style="font-size: 0.75em;">
+                <strong>问题：</strong>精度矩阵持续增大，协方差→0，搜索完全停止
+            </div>
+        </div>
+        <div>
+            <h4>有重置（每 $T_0$ 代）</h4>
+            <p class="small">定期重新扩展搜索范围，<br>保持探索能力</p>
+            <p class="tiny">📹 <a href="../output_igo_test/cos_cos_test_with_reset.mp4">有重置优化视频</a></p>
+            <div class="info-box" style="font-size: 0.75em;">
+                <strong>效果：</strong>精度被周期性"松开"，但均值保留，搜索持续进行
+            </div>
+        </div>
+    </div>
+    <p class="small" style="margin-top: 12px; text-align: center;">
+        重置周期 $T_0$ 是探索-利用平衡的关键参数：太小 → 收敛慢；太大 → 容易陷入局部最优
+    </p>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- PART 3: SECTION DIVIDER -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section class="center-slide section-divider">
+    <div class="section-num">Part 3</div>
+    <h2>逆最优控制与代价函数设计</h2>
+    <p style="color: #888;">通过 IOC 方法设计 IGO 求解器的 cost 函数</p>
+</section>
+
+<!-- 3.1 Motivation -->
+<section>
+    <h3>为什么需要 IOC？——代价函数设计的困境</h3>
+    <div class="two-col equal">
+        <div>
+            <div class="info-box important">
+                <strong>直接设计的困难：</strong><br>
+                对于复杂控制任务，直接设计一个好的代价函数 $J$ 非常困难。权重需要反复试凑，缺乏理论指导。
+            </div>
+        </div>
+        <div>
+            <div class="info-box idea">
+                <strong>IOC 的思路：</strong><br>
+                先设计一个"好"的控制律，然后<strong>反推</strong>出使该控制律最优的代价函数——这个代价函数就是 IGO 求解器的 cost。
+            </div>
+        </div>
+    </div>
+    <div style="text-align: center; margin-top: 16px;">
+        <div class="hflow" style="font-size: 1.2em;">
+            <div class="step">设计<br>控制律</div>
+            <div class="harrow">→</div>
+            <div class="step">构造<br>CLF</div>
+            <div class="harrow">→</div>
+            <div class="step highlight">推导<br>代价函数</div>
+            <div class="harrow">→</div>
+            <div class="step highlight">添加约束<br>（如避障等）</div>
+            <div class="harrow">→</div>
+            <div class="step">作为 IGO<br>的 cost</div>
+        </div>
+    </div>
+</section>
+
+<!-- 3.2 Direct vs Inverse -->
+<section>
+    <h3>最优控制 vs 逆最优控制</h3>
+    <div class="cmp-grid">
+        <div class="cmp-card left">
+            <h4>前向（直接）最优控制</h4>
+            <p class="small">代价函数 $J$ → 求解 HJB 方程 → 最优控制律 $\mathbf{u}^*$</p>
+            <p class="small" style="color: #dc2626;">HJB 是偏微分方程，对一般非线性系统极难求解</p>
+            <div class="smaller">
+                $$\min_{\mathbf{u}} \left\{ l(\mathbf{x}) + \mathbf{u}^\top \mathbf{R} \mathbf{u} + \nabla V \cdot [\mathbf{f} + \mathbf{g}\mathbf{u}] \right\} = 0$$
+                $$\mathbf{u}^* = -\frac{1}{2} \mathbf{R}^{-1} \mathbf{g}^\top \nabla V$$
+            </div>
+        </div>
+        <div class="cmp-card right">
+            <h4>逆向（IOC）最优控制</h4>
+            <p class="small">镇定控制器 $\mathbf{u} = \mathbf{k}(\mathbf{x})$ → 构造 CLF → 代价函数 $J$</p>
+            <p class="small" style="color: #16a34a;">避免求解 HJB，只需构造 CLF 并验证 $\dot{V} < 0$</p>
+            <div class="smaller">
+                $$l(\mathbf{x}) = -\nabla V \cdot [\mathbf{f} + \mathbf{g}\mathbf{k}] - \frac{1}{2}\mathbf{k}^\top \mathbf{R} \mathbf{k} + \frac{1}{4} \nabla V \mathbf{g} \mathbf{R}^{-1} \mathbf{g}^\top (\nabla V)^\top$$
+                $$J = \int_0^\infty [l(\mathbf{x}) + \mathbf{u}^\top \mathbf{R} \mathbf{u}] dt$$
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 3.3 CLF -->
+<section>
+    <h3>核心工具：控制 Lyapunov 函数（CLF）</h3>
+    <div class="two-col wide-right">
+        <div>
+            <p><strong>定义</strong></p>
+            <p class="small">光滑、正定、径向无界的 $V(\mathbf{x})$ 满足：</p>
+            <p class="smaller">
+                $$\inf_{\mathbf{u}} \left\{ \nabla V \cdot [\mathbf{f}(\mathbf{x}) + \mathbf{g}(\mathbf{x}) \mathbf{u}] \right\} < 0, \quad \forall \mathbf{x} \neq \mathbf{0}$$
+            </p>
+            <div class="info-box">
+                <strong>直观含义：</strong>无论系统处于什么状态，总存在某个控制输入能使 $V$ 减小。CLF 的存在性等价于系统的<strong>可镇定性</strong>。
+            </div>
+        </div>
+        <div>
+            <p><strong>从 CLF 到控制器</strong></p>
+            <p class="small">给定 CLF，可构造点状最小范数（PMN）控制器：</p>
+            <p class="smaller">
+                $$\mathbf{u}_{\text{PMN}} = \arg\min_{\mathbf{u}} \|\mathbf{u}\|^2 \quad \text{s.t.} \quad \dot{V} \leq -\sigma(\mathbf{x})$$
+            </p>
+            <p class="small">闭式解：</p>
+            <p class="smaller">
+                $$\mathbf{u}_{\text{PMN}} = \begin{cases}
+                -\frac{L_f V + \sigma}{ \|L_g V\|^2} (L_g V)^\top, & L_g V \neq \mathbf{0} \\
+                \mathbf{0}, & L_g V = \mathbf{0}
+                \end{cases}$$
+            </p>
+        </div>
+    </div>
+</section>
+
+<!-- 3.4 Inverse Optimality Theorem -->
+<section>
+    <h3>逆最优性核心定理</h3>
+    <div class="info-box theorem">
+        <strong>定理（Freeman &amp; Kokotović, 1996）：</strong><br>
+        设 $V(\mathbf{x})$ 是系统 $\dot{\mathbf{x}} = \mathbf{f}(\mathbf{x}) + \mathbf{g}(\mathbf{x})\mathbf{u}$ 的一个 CLF，$\mathbf{u} = \mathbf{k}(\mathbf{x})$ 是满足 $\dot{V} < 0$（$\forall \mathbf{x} \neq \mathbf{0}$）的连续镇定控制律。则该控制律关于以下代价函数是<strong>逆最优</strong>的：
+        $$J = \int_0^\infty \big[ l(\mathbf{x}) + \mathbf{u}^\top \mathbf{R}(\mathbf{x}) \mathbf{u} \big] \, dt$$
+        并且 $l(\mathbf{x}) > 0$ 对所有 $\mathbf{x} \neq \mathbf{0}$ 成立（代价函数"有意义"），$V(\mathbf{x})$ 本身就是该最优控制问题的值函数。
+    </div>
+    <p class="small" style="margin-top: 12px;">
+        <strong>意义：</strong>只要找到了一个 CLF 和一个使它递减的控制器，就<strong>自动</strong>得到了一个使该控制器最优的代价函数——不需要求解 HJB 方程。
+    </p>
+</section>
+
+<!-- 3.5 Sontag Formula
+<section>
+    <h3>Sontag 通用构造公式</h3>
+    <p class="small">Sontag (1989) 给出了从 CLF 构造镇定控制器的通用公式。对单输入系统 $\dot{\mathbf{x}} = \mathbf{f}(\mathbf{x}) + \mathbf{g}(\mathbf{x}) u$：</p>
+    <div class="smaller" style="text-align: center;">
+        $$
+        u_S(\mathbf{x}) = \begin{cases}
+        -\dfrac{L_f V + \sqrt{(L_f V)^2 + q(\mathbf{x}) (L_g V)^4}}{(L_g V)^2} \cdot L_g V, & L_g V \neq 0 \\[10pt]
+        0, & L_g V = 0
+        \end{cases}
+        $$
+    </div>
+    <div class="two-col equal" style="margin-top: 12px;">
+        <div>
+            <ul class="small">
+                <li>$q(\mathbf{x}) > 0$：设计者选择的权重函数</li>
+                <li>控制"激进程度"</li>
+            </ul>
+        </div>
+        <div>
+            <ul class="small">
+                <li>Sontag 公式是 PMN 控制器的特例</li>
+                <li>该控制器是<strong>逆最优</strong>的</li>
+            </ul>
+        </div>
+    </div>
+</section> -->
+
+<!-- 3.6 Differential Drive Robot -->
+<section>
+    <h3>应用案例：双轮差速驱动机器人</h3>
+    <div class="two-col wide-right">
+        <div>
+            <h4>笛卡尔坐标系运动学模型</h4>
+            <p class="smaller">
+                $$\dot{x} = v \cos \theta$$
+                $$\dot{y} = v \sin \theta$$
+                $$\dot{\theta} = \omega$$
+            </p>
+            <h4>极坐标系模型</h4>
+            <p class="smaller">
+                $$\dot{\rho} = -v \cos \gamma$$
+                $$\dot{\delta} = \frac{v}{\rho} \sin \gamma$$
+                $$\dot{\gamma} = \frac{v}{\rho} \sin \gamma - \omega$$
+            </p>
+            <p class="small">其中 $\rho$ 为到原点距离，$\delta$ 为方位角，$\gamma = \delta - \theta$ 为朝向偏差</p>
+        </div>
+        <div>
+            <img src="../figures/fig1.png" alt="差速驱动机器人坐标系">
+            <div class="img-caption">笛卡尔坐标与极坐标的关系</div>
+        </div>
+    </div>
+</section>
+
+<!-- 3.7 Affine Form -->
+<section>
+    <h3>仿射非线性形式</h3>
+    <p class="small">将系统写为标准仿射形式 $\dot{\mathbf{x}} = \mathbf{f}(\mathbf{x}) + \mathbf{g}(\mathbf{x})\mathbf{u}$：</p>
+    <div style="text-align: center; font-size: 0.8em;">
+        $$
+        \underbrace{\begin{bmatrix} \dot{\rho} \\ \dot{\delta} \\ \dot{\gamma} \end{bmatrix}}_{\dot{\mathbf{x}}}
+        = \underbrace{\begin{bmatrix} 0 \\ 0 \\ 0 \end{bmatrix}}_{\mathbf{f}(\mathbf{x})}
+        + \underbrace{\begin{bmatrix} -\cos\gamma & 0 \\ \frac{\sin\gamma}{\rho} & 0 \\ \frac{\sin\gamma}{\rho} & -1 \end{bmatrix}}_{\mathbf{g}(\mathbf{x})}
+        \underbrace{\begin{bmatrix} v \\ \omega \end{bmatrix}}_{\mathbf{u}}
+        $$
+    </div>
+    <div class="info-box" style="margin-top: 12px;">
+        <strong>注意：</strong>$\mathbf{f}(\mathbf{x}) = \mathbf{0}$ 大大简化了分析——$L_f V = 0$，所有动力学由 $\mathbf{g}(\mathbf{x})$ 和控制输入驱动。
+    </div>
+</section>
+
+<!-- 3.8 Control Law Design -->
+<section>
+    <h3>控制律设计</h3>
+    <p class="small">目标：镇定系统到原点 $(\rho=0, \delta=0, \gamma=0)$。设计如下控制律：</p>
+    <div class="two-col">
+        <div>
+            <p><strong>线速度</strong></p>
+            <p class="smaller">$$v = k_1 \rho \cos \gamma$$</p>
+            <p class="small">$v \propto \rho$：越远越快<br>$\cos\gamma$：朝向不对时减速</p>
+        </div>
+        <div>
+            <p><strong>角速度</strong></p>
+            <p class="smaller">$$\omega = \frac{k_1}{2} \sin(2\gamma) + \tilde{\omega}$$</p>
+            <p class="small">$\tilde{\omega}$ 有 4 种变体<br>对应不同的 $\delta$-$\gamma$ 耦合策略</p>
+        </div>
+    </div>
+    <p style="margin-top: 8px;"><strong>四种 $\tilde{\omega}$ 变体：</strong></p>
+    <table class="smaller">
+        <thead><tr><th>变体</th><th>表达式</th><th>耦合特征</th></tr></thead>
+        <tbody>
+            <tr><td>$\tilde{\omega}_1$</td><td>$k_2\sin\gamma + k_3\frac{\sin 2\gamma}{2\gamma}\delta$</td><td>sinc 型，标准耦合</td></tr>
+            <tr><td>$\tilde{\omega}_2$</td><td>$k_2\sin\gamma + \frac{k_3\cos\gamma}{(1+\tan^2(\gamma/2))^2}\delta$</td><td>$\gamma$ 快速衰减型</td></tr>
+            <tr><td>$\tilde{\omega}_3$</td><td>$k_2\sin\gamma + 2k_3\frac{\sin 2\gamma}{2\gamma}(1+\tan^2\frac{\delta}{2})\tan\frac{\delta}{2}$</td><td>$\delta$ 增强型</td></tr>
+            <tr><td>$\tilde{\omega}_4$</td><td>$k_2\sin\gamma + 2k_3\frac{\cos\gamma}{(1+\tan^2(\gamma/2))^2}(1+\tan^2\frac{\delta}{2})\tan\frac{\delta}{2}$</td><td>综合调节型</td></tr>
+        </tbody>
+    </table>
+</section>
+
+<!-- 3.9 CLF Construction -->
+<section>
+    <h3>CLF 构造</h3>
+    <p class="small">四种控制律变体分别对应四种 CLF 设计：</p>
+    <table class="smaller">
+        <thead>
+            <tr><th>CLF</th><th>状态空间</th><th>表达式 $V(\rho, \delta, \gamma)$</th><th>$\delta$-$\gamma$ 耦合机制</th></tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>$V_0$</td><td>$\mathcal{S}$</td>
+                <td>$\rho^2 + \frac{1}{2}(\delta^2 + \gamma^2 + 2)^2 - 2 + (\delta + \gamma)^2$</td>
+                <td>$(\delta+\gamma)^2$ → 线性耦合</td>
+            </tr>
+            <tr>
+                <td>$V_1$</td><td>$\mathcal{S}_1$</td>
+                <td>$\rho^2 + (\delta + \sin\gamma)^2 + 4\tan^2\frac{\gamma}{2}$</td>
+                <td>$(\delta+\sin\gamma)^2$ → $\gamma$ 快速衰减</td>
+            </tr>
+            <tr>
+                <td>$V_2$</td><td>$\mathcal{S}_2$</td>
+                <td>$\rho^2 + \delta^2 + \left(\gamma + \frac{1}{2}\arctan(4\tan\frac{\delta}{2})\right)^2$</td>
+                <td>$\arctan$ → $\delta$ 增强</td>
+            </tr>
+            <tr>
+                <td>$V_3$</td><td>$\mathcal{S}_3$</td>
+                <td>$\rho^2 + A^3 - 1 + B^2$<br><span class="tiny">$A=4\tan^2\frac{\delta}{2}+4\tan^2\frac{\gamma}{2}+1, B=2\tan\frac{\delta}{2}+2\tan\frac{\gamma}{2}$</span></td>
+                <td>$B^2+A^3$ → 综合调节</td>
+            </tr>
+        </tbody>
+    </table>
+    <p class="small" style="margin-top: 10px;">所有 $V_i$ 均满足 CLF 的三个条件：<strong>正定</strong>（$V>0, \forall \mathbf{x}\neq\mathbf{0}$）、<strong>径向无界</strong>（$\|\mathbf{x}\|\to\infty \Rightarrow V\to\infty$）、<strong>可镇定</strong>（$\inf_{\mathbf{u}} \dot{V} < 0$）。</p>
+</section>
+
+<!-- 3.10 Lyapunov Stability Proof -->
+<section>
+    <h3>稳定性验证</h3>
+    <p class="small">以 $\tilde{\omega}_1$ 为例，代入 $\dot{V}$ 验证稳定性：</p>
+    <div class="smaller">
+        $$\dot{V} = -k_1\rho^2\cos^2\gamma + k_1\delta\sin\gamma\cos\gamma - \frac{k_2}{2}\sin^2\gamma - \frac{k_3}{2}\frac{\sin\gamma\sin 2\gamma}{2\gamma}\delta$$
+    </div>
+    <p class="small">当 $k_1, k_2, k_3 > 0$ 且 $\gamma \approx 0$ 时（$\sin\gamma \approx \gamma, \cos\gamma \approx 1$）：</p>
+    <div class="smaller">
+        $$\dot{V} \approx -k_1\rho^2 - \frac{k_2}{2}\gamma^2 + \left(k_1 - \frac{k_3}{2}\right)\gamma\delta$$
+    </div>
+    <div class="info-box theorem">
+        <strong>选取 $k_3 = 2k_1$：</strong>交叉项抵消，$\dot{V} \approx -k_1\rho^2 - \frac{k_2}{2}\gamma^2 \leq 0$，系统<strong>渐近稳定</strong>。
+    </div>
+</section>
+
+<!-- 3.11 Inverse Optimal Cost -->
+<section>
+    <h3>逆最优代价函数的构造</h3>
+    <p class="small">取 $\mathbf{R} = \operatorname{diag}(r_1, r_2) \succ 0$，由逆最优性定理，代价函数为：</p>
+    <div class="smaller">
+        $$J_i = \int_0^\infty \big[ l_i(\mathbf{x}) + r_1 v^2 + r_2 \omega^2 \big] \, dt$$
+    </div>
+    <p class="small">其中状态代价 $l_i(\mathbf{x})$ 为：</p>
+    <div class="smaller">
+        $$l_i = -(L_g V_{i,1} \cdot v_{\text{ref}} + L_g V_{i,2} \cdot \omega_{\text{ref}}) - \frac{1}{2}(r_1 v_{\text{ref}}^2 + r_2 \omega_{\text{ref}}^2) + \frac{1}{4}\left(\frac{(L_g V_{i,1})^2}{r_1} + \frac{(L_g V_{i,2})^2}{r_2}\right)$$
+    </div>
+    <table class="small">
+        <thead><tr><th>代价项</th><th>物理含义</th></tr></thead>
+        <tbody>
+            <tr><td>$\rho^2$ 相关项</td><td>惩罚与目标点的距离</td></tr>
+            <tr><td>$\delta^2$ 相关项</td><td>惩罚方位角偏差</td></tr>
+            <tr><td>$\sin^2\gamma$ 相关项</td><td>惩罚朝向角偏差</td></tr>
+            <tr><td>$r_1 v^2$</td><td>惩罚线速度能耗</td></tr>
+            <tr><td>$r_2 \omega^2$</td><td>惩罚角速度能耗</td></tr>
+        </tbody>
+    </table>
+</section>
+
+<!-- 3.12 Cost Interpretation -->
+<section>
+    <h3>四种变体的代价解释</h3>
+    <table>
+        <thead>
+            <tr><th>变体</th><th>$\delta$-$\gamma$ 耦合特征</th><th>代价函数特点</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>$\tilde{\omega}_1$</td><td>$\frac{\sin 2\gamma}{2\gamma}\delta$（sinc 型）</td><td>标准耦合惩罚，$\gamma$ 大时耦合减弱</td></tr>
+            <tr><td>$\tilde{\omega}_2$</td><td>含 $\cos\gamma/(1+\tan^2(\gamma/2))^2$</td><td>$\gamma$ 较大时更快衰减耦合</td></tr>
+            <tr><td>$\tilde{\omega}_3$</td><td>含 $(1+\tan^2(\delta/2))\tan(\delta/2)$</td><td>$\delta$ 较大时增强耦合，加速大偏差校正</td></tr>
+            <tr><td>$\tilde{\omega}_4$</td><td>$\tilde{\omega}_2$ + $\tilde{\omega}_3$ 的综合</td><td>综合调节，适应范围最广</td></tr>
+        </tbody>
+    </table>
+    <div class="info-box idea" style="margin-top: 16px;">
+        <strong>关键洞察：</strong>代价函数不是事先指定的，而是从控制律和 CLF <strong>逆向推导</strong>出来的。通过改变控制律结构来<strong>隐式地表达不同的代价偏好</strong>，而不需要显式地调代价函数的权重——这就是逆最优控制的优势。
+    </div>
+</section>
+
+<!-- 3.13 IOC Design Flow -->
+<section>
+    <h3>IOC 通用设计流程</h3>
+    <ol class="step-list">
+        <li><strong>系统建模</strong> — 将动力学写为仿射形式 $\dot{\mathbf{x}} = \mathbf{f}(\mathbf{x}) + \mathbf{g}(\mathbf{x})\mathbf{u}$</li>
+        <li><strong>构造 CLF</strong> — 构造正定、径向无界的 $V(\mathbf{x})$，验证 $\inf_{\mathbf{u}} \dot{V} < 0$</li>
+        <li><strong>设计控制律</strong> — 基于 $V$ 设计 $\mathbf{u} = \mathbf{k}(\mathbf{x})$，使 $\dot{V} < 0$</li>
+        <li><strong>验证逆最优性</strong> — 由定理构造 $l(\mathbf{x})$，验证 $l(\mathbf{x}) > 0$</li>
+        <li><strong>解读代价函数</strong> — 将 $J = \int [l(\mathbf{x}) + \mathbf{u}^\top \mathbf{R} \mathbf{u}] dt$ 作为 IGO 的 cost</li>
+    </ol>
+    <div class="info-box" style="margin-top: 16px;">
+        <strong>IOC 的核心优势：</strong>避免求解 HJB 方程、自动获得鲁棒性（类似 LQR 的增益/相位裕度）、代价函数物理含义可解释。
+    </div>
+</section>
+
+<!-- 3.14 Live Demo -->
+<section>
+    <h3>现场演示：差速驱动机器人仿真</h3>
+    <div class="two-col">
+        <div>
+            <p><strong>运行方式：</strong></p>
+            <div style="background: var(--code-bg); border: 1px solid var(--border-color); border-radius: 6px; padding: 12px 16px; font-family: monospace; font-size: 0.75em;">
+                cd /path/to/IOC_AGV<br>
+                uv run main_IOC.py
+            </div>
+            <p class="small" style="margin-top: 12px;">
+                <strong>交互功能：</strong>
+            </p>
+            <ul class="small">
+                <li>🟢 拖动绿点：改变起始位置</li>
+                <li>🔴 拖动红点：改变目标位置</li>
+                <li>🎚️ 滑块：调节 $k_1, k_2, k_3$ 和初始朝向 $\theta_0$</li>
+                <li>📻 单选按钮：切换控制律变体 1-4</li>
+                <li>☑️ 复选框：切换 tanh 饱和 ($v_{\max}=1.0, \omega_{\max}=1.0$)</li>
+            </ul>
+        </div>
+        <div>
+            <img src="../figures/ioc_clf.png" alt="IOC CLF可视化" style="max-height: 480px;">
+            <div class="img-caption">CLF 可视化（$\rho$-$\delta$ 截面）</div>
+        </div>
+    </div>
+    <p class="small" style="margin-top: 8px; text-align: center; color: var(--accent);">
+        <em>现场运行演示程序，展示四种控制律变体在不同参数下的轨迹行为</em>
+    </p>
+</section>
+
+<section>
+    <h3>4 AGV 协同控制演示</h3>
+    
+    <p class="small">在更复杂的多智能体场景中，IOC 设计的代价函数同样适用。以下是一个4台差速驱动 AGV 协同避障的<a href="../figures/mrs_bs_prediction.mp4" target="_blank">仿真演示</a>：</p>
+    <div class="two-col" style="align-items: center;">
+        <div style="text-align: center; max-width: 40%;">
+            <video src="../figures/mrs_bs_prediction.mp4" alt="4台AGV协同演示" style="max-width: 100%;" controls>
+            </video>
+            <div class="img-caption">4台差速驱动 AGV 在狭窄通道中协同避障，<br>基于 IOC 设计的代价函数进行 IGO 优化</div>
+        </div>
+        <div style="text-align: center; max-width: 45%;">
+            <img src="../figures/mrs_bs_solve_time.png" alt="实际求解时间" style="max-width: 80%;">
+            <div class="img-caption">MGIGO 求解器实际求解时间统计 (CUDA程序) </div>
+        </div>
+    </div>
+
+
+</section>
+
+<!-- 3.15 From IOC to IGO -->
+<section>
+    <h3>IOC → IGO：代价函数作为优化目标</h3>
+    <div class="hflow" style="font-size: 0.72em;">
+        <div class="step">IOC 方法<br>构造代价函数<br>$J(\mathbf{x}, \mathbf{u})$</div>
+        <div class="harrow">→</div>
+        <div class="step">参数化<br>控制律<br>$\mathbf{u} = \mathbf{k}(\mathbf{x}; \boldsymbol{\theta})$</div>
+        <div class="harrow">→</div>
+        <div class="step">定义 cost<br>$f(\boldsymbol{\theta}) = J(\mathbf{x}, \mathbf{k}(\mathbf{x};\boldsymbol{\theta}))$</div>
+        <div class="harrow">→</div>
+        <div class="step highlight">IGO 求解器<br>优化 $\boldsymbol{\theta}$<br>找到最优参数</div>
+    </div>
+    <div class="info-box" style="margin-top: 16px;">
+        <strong>完整工作流：</strong><br>
+        1. 用 IOC 方法为控制任务设计"有意义的"代价函数 $J$<br>
+        2. 将控制律参数化为 $\boldsymbol{\theta}$，定义 IGO 的目标函数 $f(\boldsymbol{\theta})$<br>
+        3. 用 MGIGO 求解器搜索最优参数 $\boldsymbol{\theta}^*$<br>
+        4. 得到既<strong>理论上有保证</strong>（逆最优性）又<strong>数值上最优</strong>（IGO 搜索）的控制律
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SUMMARY -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section class="center-slide section-divider">
+    <div class="section-num">Summary</div>
+    <h2>总结</h2>
+</section>
+
+<!-- 4.1 Summary -->
+<section>
+    <h3>总结</h3>
+    <div class="two-col equal">
+        <div>
+            <h4>IGO 求解器</h4>
+            <ul class="small">
+                <li>用<strong>高斯混合模型</strong>维护搜索分布</li>
+                <li>通过<strong>自然梯度</strong>沿信息几何最优方向更新</li>
+                <li><strong>精英选择</strong> + <strong>周期性重置</strong>平衡探索与利用</li>
+                <li><strong>分块机制</strong>缓解维度灾难</li>
+                <li>全 JAX 实现，支持 GPU 加速</li>
+            </ul>
+        </div>
+        <div>
+            <h4>IOC 代价函数设计</h4>
+            <ul class="small">
+                <li>从控制律和<strong>CLF</strong>逆向推导代价函数</li>
+                <li>避免求解 HJB 方程</li>
+                <li>代价函数天然具有<strong>物理可解释性</strong></li>
+                <li>多种 CLF 设计对应不同耦合策略</li>
+                <li>为 IGO 提供<strong>理论指导的 cost 函数</strong></li>
+            </ul>
+        </div>
+    </div>
+    <hr style="width: 80%; border-color: var(--accent-light); margin: 20px auto;">
+    <div style="text-align: center;">
+        <p><strong>IGO + IOC = 理论保证 + 数值优化</strong></p>
+        <p class="small" style="color: #888;">
+            MGIGO 提供强大的黑盒优化能力；IOC 提供有理论基础的代价函数设计方法<br>
+            两者结合，为复杂控制问题的参数优化提供了完整的解决方案
+        </p>
+    </div>
+</section>
+
+<!-- 4.2 Key Takeaways -->
+<section>
+    <h3>核心要点回顾</h3>
+    <div class="two-col equal">
+        <div>
+            <div class="info-box idea">
+                <strong>1. 信息几何视角</strong><br>
+                <span class="small">优化 = 在分布空间中沿自然梯度下降，不受参数化影响</span>
+            </div>
+            <div class="info-box">
+                <strong>2. 多模态探索</strong><br>
+                <span class="small">高斯混合模型天然支持同时追踪多个最优区域</span>
+            </div>
+            <div class="info-box idea">
+                <strong>3. 不确定性量化</strong><br>
+                <span class="small">协方差矩阵 = 搜索的"置信度"，从探索到利用的过程可视化</span>
+            </div>
+        </div>
+        <div>
+            <div class="info-box theorem">
+                <strong>4. 逆最优保证</strong><br>
+                <span class="small">IOC 提供理论保证：设计的代价函数使控制器最优</span>
+            </div>
+            <div class="info-box">
+                <strong>5. 模块化设计</strong><br>
+                <span class="small">分块机制 + 多 CLF 变体 = 灵活适配不同任务需求</span>
+            </div>
+            <div class="info-box theorem">
+                <strong>6. 计算高效</strong><br>
+                <span class="small">JAX jit + vmap + lax.scan = GPU 加速的全并行优化</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 4.3 References -->
+<section>
+    <h3>参考文献</h3>
+    <div class="small">
+        <ul>
+            <li>Kalman, R. E. (1964). "When is a linear control system optimal?" <em>Journal of Basic Engineering</em>, 86(1), 51-60.</li>
+            <li>Sontag, E. D. (1989). "A 'universal' construction of Artstein's theorem on nonlinear stabilization." <em>Systems &amp; Control Letters</em>, 13(2), 117-123.</li>
+            <li>Freeman, R. A. &amp; Kokotović, P. V. (1996). "Inverse optimality in robust stabilization." <em>SIAM Journal on Control and Optimization</em>, 34(4), 1365-1391.</li>
+            <li>Freeman, R. A. &amp; Kokotović, P. V. (2008). <em>Robust Nonlinear Control Design</em>. Birkhäuser.</li>
+            <li>Sepulchre, R., Janković, M., &amp; Kokotović, P. V. (1997). <em>Constructive Nonlinear Control</em>. Springer.</li>
+            <li>CMA-ES / NES / IGO: Ollivier, Y., Arnold, L., Auger, A., &amp; Hansen, N. (2017). "Information-Geometric Optimization Algorithms: A Unifying Picture via Invariance Principles." <em>JMLR</em>, 18(18), 1-65.</li>
+        </ul>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- END SLIDE -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section class="center-slide">
+    <h2>感谢聆听</h2>
+    <p style="font-size: 1.2em; color: #888;">Questions &amp; Discussion</p>
+    <hr style="width: 40%; border-color: var(--accent-light); margin: 1.5em auto;">
+    <p class="small" style="color: #aaa;">
+        MGIGO: Mixture of Gaussian Information-Geometric Optimization<br>
+        IOC: Inverse Optimal Control
+    </p>
+</section>
+
+</div><!-- .slides -->
+</div><!-- .reveal -->
+
+<!-- Reveal.js -->
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.6.0/dist/reveal.js"></script>
+<script>
+    Reveal.initialize({
+        hash: true,
+        slideNumber: 'c/t',
+        transition: 'none',
+        width: 1280,
+        height: 720,
+        margin: 0.04,
+        center: false,
+        // MathJax re-rendering after slide changes
+        plugins: []
+    });
+
+    // Re-render MathJax on slide changes (for multi-page equations)
+    Reveal.on('slidechanged', function(event) {
+        if (window.MathJax) {
+            MathJax.typesetPromise([event.currentSlide]);
+        }
+    });
+</script>
+</body>
+</html>
