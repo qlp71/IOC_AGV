@@ -1,0 +1,15 @@
+[project]
+name = "ioc-agv"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "numpy",
+    "matplotlib",
+    "pyqt6>=6.11.0",
+    "jax[cuda13]>=0.10.1",
+    "jaxlib>=0.10.1",
+    "tqdm>=4.67.3",
+    "pip>=26.1.2",
+]
