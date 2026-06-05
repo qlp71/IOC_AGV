@@ -688,8 +688,8 @@ class InteractiveSim:
             f"w₁ = {self.w1:.2f}\nw₂ = {self.w2:.2f}",
             # f"Steps: {n}",
         ]
-        if self.ioc_result is not None:
-            lines.append(f"IOC  : cost={self.ioc_result['cost']:.2f}")
+        # if self.ioc_result is not None:
+        #     lines.append(f"IOC  : cost={self.ioc_result['cost']:.2f}")
         self.info_text.set_text("\n".join(lines))
 
         self.fig.canvas.draw_idle()

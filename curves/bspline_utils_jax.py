@@ -284,3 +284,22 @@ def derivative_ctrl_pts(
     dctrl = p * (ctrl_pts[1:] - ctrl_pts[:-1]) / safe_denom[:, None]
     dknots = knots[1:-1]
     return dctrl, dknots
+
+def generate_ctrl_t(sample_times: jnp.ndarray, T: float) -> jnp.ndarray:
+    """Generate control points for B-spline optimization.
+
+    Parameters
+    ----------
+    sample_times : (n_ctrl,) array
+        Initial samples for time.
+    T: float
+        Total time duration.
+    Returns
+        base on samples_times, devide the time T into n_ctrl segments, the ratio of each segment is base on the 
+        dt_i = exp(sample_times[i]) / sum(exp(sample_times)) * T
+    """
+    exp_times = jnp.exp(sample_times)
+    sum_exp_times = jnp.sum(exp_times)
+    dt = exp_times / sum_exp_times * T
+    ctrl_t = jnp.cumsum(dt)
+    return ctrl_t

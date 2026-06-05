@@ -13,7 +13,7 @@
 | **MGIGO** (Mixture of Gaussian IGO) | 优化引擎 | 无需梯度的黑盒随机搜索算法，用高斯混合模型在参数空间中搜索最优解 |
 | **IOC** (Inverse Optimal Control) | 代价函数设计 | 从控制律和 CLF 逆向推导"有意义的"代价函数，为 IGO 提供优化目标 |
 
-两者结合形成完整工作流：**IOC 设计代价函数 → IGO 搜索最优参数 → 得到理论有保证且数值最优的控制律**。
+两者结合形成完整工作流：**IOC 设计代价函数 → IGO 搜索最优参数 → 规划出有理论保证且数值最优的轨迹**。
 
 此外，项目还包含一个**多机器人系统（MRS）B-spline 轨迹规划与可视化工具**。
 
@@ -145,6 +145,9 @@ uv run main_MRS_bs.py
 | 单选按钮 | 切换控制律变体 1–4 |
 | 复选框 | 切换 tanh 速度饱和 |
 
+效果如图所示：
+![IOC 仿真界面](./figures/IOC-AGV-viz.png)
+
 ---
 
 ### 3. MRS B-spline 轨迹规划（`curves/`, `mrs_bs_viz.py`）
@@ -156,6 +159,10 @@ uv run main_MRS_bs.py
 - 实时显示中心轨迹及各机器人轨迹
 
 详细文档：[b-sp-MRS.md](./b-sp-MRS.md)
+
+仿真视频见 [./figures/mrs_bs_prediction.mp4](./figures/mrs_bs_prediction.mp4)
+
+该工作具体细节还没整理成文档，后续会补充。
 
 ---
 

@@ -8,6 +8,7 @@ os.environ["XLA_PYTHON_CLIENT_PREALLOCATE"] = "false"  # avoid OOM on GPU with l
 from curves.bspline_utils_jax import (
     Context,
     bspline_basis,
+    generate_ctrl_t,
     curve_derivative,
     derivative_ctrl_pts,
     evaluate_curve,
@@ -92,6 +93,11 @@ def _clf_grad_0(rho: jnp.ndarray, delta: jnp.ndarray,
     dV_dgamma = 2.0 * gamma * d2g2p2 + 2.0 * (delta + gamma)
     return dV_drho, dV_ddelta, dV_dgamma
 
+def _clf_terminal_cost0(
+        rho: jnp.ndarray, delta: jnp.ndarray, gamma: jnp.ndarray) -> jnp.ndarray:
+    """Terminal cost based on the CLF value at the final state."""
+    V = rho**2 + 0.5 * (delta**2 + gamma**2 + 2.0)**2 - 2.0 + (delta + gamma)**2
+    return V
 
 def _clf_grad_1(rho: jnp.ndarray, delta: jnp.ndarray,
                 gamma: jnp.ndarray) -> tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
@@ -107,6 +113,11 @@ def _clf_grad_1(rho: jnp.ndarray, delta: jnp.ndarray,
                  + 4.0 * tan_g2 * (1.0 + tan_g2**2))
     return dV_drho, dV_ddelta, dV_dgamma
 
+def _clf_terminal_cost1(rho: jnp.ndarray, delta: jnp.ndarray, gamma: jnp.ndarray) -> jnp.ndarray:
+    """Terminal cost based on the CLF value at the final state."""
+    V = rho**2 + (delta + jnp.sin(gamma))**2 + 4.0 * jnp.tan(gamma / 2.0)**2
+    return V
+
 
 def _clf_grad_2(rho: jnp.ndarray, delta: jnp.ndarray,
                 gamma: jnp.ndarray) -> tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
@@ -121,6 +132,11 @@ def _clf_grad_2(rho: jnp.ndarray, delta: jnp.ndarray,
     dV_ddelta = 2.0 * delta + 2.0 * phi * dphi_ddelta
     dV_dgamma = 2.0 * phi
     return dV_drho, dV_ddelta, dV_dgamma
+
+def _clf_terminal_cost2(rho: jnp.ndarray, delta: jnp.ndarray, gamma: jnp.ndarray) -> jnp.ndarray:
+    """Terminal cost based on the CLF value at the final state."""
+    V = rho**2 + delta**2 + (gamma + 0.5 * jnp.arctan(4.0 * jnp.tan(delta / 2.0)))**2
+    return V
 
 
 def _clf_grad_3(rho: jnp.ndarray, delta: jnp.ndarray,
@@ -146,6 +162,12 @@ def _clf_grad_3(rho: jnp.ndarray, delta: jnp.ndarray,
     dV_dgamma = 12.0 * A**2 * tan_g2 * sec2_g2 + 4.0 * B * sec2_g2
     return dV_drho, dV_ddelta, dV_dgamma
 
+def _clf_terminal_cost3(rho: jnp.ndarray, delta: jnp.ndarray, gamma: jnp.ndarray) -> jnp.ndarray:
+    """Terminal cost based on the CLF value at the final state."""
+    A = 4.0 * jnp.tan(delta / 2.0)**2 + 4.0 * jnp.tan(gamma / 2.0)**2 + 1.0
+    B = 2.0 * jnp.tan(delta / 2.0)
+    V = rho**2 + A**3 - 1.0 + B**2
+    return V
 
 def _clf_grad(
     rho: jnp.ndarray, delta: jnp.ndarray, gamma: jnp.ndarray,
@@ -163,6 +185,22 @@ def _clf_grad(
     return jax.lax.switch(variant_idx, [_case_0, _case_1, _case_2, _case_3],
                           (rho, delta, gamma))
 
+def _clf_terminal_cost(
+        rho: jnp.ndarray, delta: jnp.ndarray, gamma: jnp.ndarray,
+        variant_idx: int
+) -> jnp.ndarray:
+    """Terminal cost based on the CLF value at the final state."""
+    def _case_0(args):
+        return _clf_terminal_cost0(*args)
+    def _case_1(args):
+        return _clf_terminal_cost1(*args)
+    def _case_2(args):
+        return _clf_terminal_cost2(*args)
+    def _case_3(args):
+        return _clf_terminal_cost3(*args)
+    V = jax.lax.switch(variant_idx, [_case_0, _case_1, _case_2, _case_3],
+                          (rho, delta, gamma))
+    return V
 
 # ═══════════════════════════════════════════════════════════════
 #  IOC cost function (the objective for IGO)
@@ -205,7 +243,8 @@ def cost_ioc(samples: jnp.ndarray, context: Context) -> jnp.ndarray:
     ctrl_pts = ctrl_pts.at[-1, 2].set(T)
 
     # ---- non‑uniform knot vector from sorted t values ----
-    t_inp = jnp.sort(ctrl_pts[:, 2])                        # (n_ctrl,)  monotonic
+    # t_inp = jnp.sort(ctrl_pts[:, 2])                        # (n_ctrl,)  monotonic
+    t_inp = generate_ctrl_t(ctrl_pts[:, 2], context.T)
     knots = generate_knots(t_inp, deg)
 
     # 2‑D spatial control points
@@ -231,12 +270,11 @@ def cost_ioc(samples: jnp.ndarray, context: Context) -> jnp.ndarray:
     omega = (dx * d2y - dy * d2x) / (speed_sq + EPS)
 
     # ---- polar coordinates  (w.r.t. target = origin) ----
-    rho, delta, gamma = _cart_to_polar_jax(x, y, theta)
+    rho, delta, gamma = _cart_to_polar_jax(x - context.end_pt[0], y - context.end_pt[1], theta)
 
     # ---- control‑law reference  v_ref, ω_ref ----
     v_ref = context.k1 * rho * jnp.cos(gamma)
-    w_tilde = _tilde_omega(delta, gamma, context.k2, context.k3,
-                           context.ctrl_law_idx)
+    w_tilde = _tilde_omega(delta, gamma, context.k2, context.k3, context.ctrl_law_idx)
     omega_ref = 0.5 * context.k1 * jnp.sin(2 * gamma) + w_tilde
     v_ref = jnp.where(context.is_sat, jnp.tanh(v_ref), v_ref)
     omega_ref = jnp.where(context.is_sat, jnp.tanh(omega_ref), omega_ref)
@@ -302,14 +340,23 @@ def cost_ioc(samples: jnp.ndarray, context: Context) -> jnp.ndarray:
     d0 = d1[0]                                              # (2,)
     d0_norm = jnp.sqrt(jnp.sum(d0 ** 2) + EPS)
     d0_v1 = jnp.array([jnp.cos(context.start_theta), jnp.sin(context.start_theta)])
-    # d0_v2 = jnp.array([jnp.cos(context.start_theta), -jnp.sin(context.start_theta)])
-    tangent_penalty = 50.0 * jnp.sum((d0 / d0_norm - d0_v1) ** 2)
+    # d0_v2 = jnp.array([jnp.cos(context.start_theta + jnp.pi), jnp.sin(context.start_theta + jnp.pi)])
+    tangent_penalty1 = 50.0 * jnp.sum((d0 / d0_norm - d0_v1) ** 2)
     # tangent_penalty2 = 50.0 * jnp.sum((d0 / d0_norm - d0_v2) ** 2)
     # tangent_penalty = jnp.minimum(tangent_penalty1, tangent_penalty2)
-    # end position → end_pt
-    # end_penalty = 60.0 * jnp.sum((curve[-1] - context.end_pt) ** 2)
 
-    return integral + tangent_penalty  # + end_penalty
+    # end position → end_pt, designed by the lyapunov‑based cost
+    x_end = curve[-1, 0]
+    y_end = curve[-1, 1]
+    theta_end = jnp.arctan2(d1[-1, 1], d1[-1, 0])
+    e_x_end = x_end - context.end_pt[0]
+    e_y_end = y_end - context.end_pt[1]
+    rho_end = jnp.sqrt(e_x_end**2 + e_y_end**2)
+    delta_end = jnp.arctan2(e_y_end, e_x_end) + jnp.pi - theta_end
+    gamma_end = jnp.arctan2(jnp.sin(delta_end), jnp.cos(delta_end))
+    end_penalty = _clf_terminal_cost(rho_end, delta_end, gamma_end, context.ctrl_law_idx)
+
+    return integral + tangent_penalty1 + end_penalty
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -331,7 +378,7 @@ def optimal_curve(
     is_sat: bool = True,
     n_ctrl: int = 6,
     deg: int = 3,
-    T: float = 6.0,
+    T: float = 8.0,
     tot_iters: int = 600,
     b_samples: int = 200,
     b0_elite: int = 80,
@@ -446,12 +493,13 @@ def optimal_curve(
     ctrl_pts_full = jnp.concatenate(
         [start_ctrl[None, :], opt_ctrl], axis=0)             # (n_ctrl, 3)
     # clamp last t to T
-    ctrl_pts_full = ctrl_pts_full.at[-1, 2].set(T)
+    # ctrl_pts_full = ctrl_pts_full.at[-1, 2].set(T)
 
     # ---- build final trajectory ----
-    t_inp = jnp.sort(ctrl_pts_full[:, 2])
+    # t_inp = jnp.sort(ctrl_pts_full[:, 2])
+    t_inp = generate_ctrl_t(ctrl_pts_full[:, 2], ctx.T)
     knots = generate_knots(t_inp, deg)
-    t_eval = jnp.linspace(0.0, T, n_eval_curve)
+    t_eval = jnp.linspace(0.0, ctx.T, n_eval_curve)
     traj_xy = evaluate_curve(ctrl_pts_full[:, :2], deg, knots, t_eval)
 
     # derive θ from tangent
