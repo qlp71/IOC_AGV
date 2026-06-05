@@ -528,10 +528,14 @@
         <div>
             <p><strong>多模态探索</strong></p>
             <p class="small">多个高斯分量可以同时追踪多个有希望的区域，不容易陷入局部最优</p>
-            <div style="text-align: center; margin: 10px 0;">
-                <div style="display: inline-block; width: 50px; height: 50px; border-radius: 50%; background: radial-gradient(circle, #1e5a8a 0%, transparent 70%); margin: 0 8px;"></div>
-                <div style="display: inline-block; width: 40px; height: 40px; border-radius: 50%; background: radial-gradient(circle, #1e5a8a 0%, transparent 70%); margin: 0 8px;"></div>
-                <div style="display: inline-block; width: 55px; height: 55px; border-radius: 50%; background: radial-gradient(circle, #1e5a8a 0%, transparent 70%); margin: 0 8px;"></div>
+            <div style="
+                    display: flex;
+                    align-items: center;
+                    justify-content: flex-start;
+                    margin: 10px 0;">
+                <div style="display: inline-block; width: 150px; height: 150px; border-radius: 50%; background: radial-gradient(circle, #1e5a8a 0%, transparent 70%); margin: 0 8px;"></div>
+                <div style="display: inline-block; width: 140px; height: 140px; border-radius: 50%; background: radial-gradient(circle, #1e5a8a 0%, transparent 70%); margin: 0 8px;"></div>
+                <div style="display: inline-block; width: 155px; height: 155px; border-radius: 50%; background: radial-gradient(circle, #1e5a8a 0%, transparent 70%); margin: 0 8px;"></div>
             </div>
         </div>
         <div>
@@ -539,10 +543,17 @@
             <p class="small">分布的协方差自然地表达搜索的"信心"：
                 <br>宽椭圆 = 还在探索
                 <br>窄椭圆 = 已经锁定</p>
-            <div style="text-align: center; margin: 10px 0;">
-                <div style="display: inline-block; width: 70px; height: 70px; border: 2px dashed #1e5a8a; border-radius: 50%; margin: 0 8px;"></div>
-                <span style="font-size: 1.5em;">→</span>
-                <div style="display: inline-block; width: 30px; height: 30px; border: 2px solid #d97706; border-radius: 50%; margin: 0 8px;"></div>
+            <!-- 3 列 -->
+            <!--  上下居中  -->
+              <div style="
+                    display: flex;
+                    align-items: center;
+                    justify-content: flex-start;
+                    margin: 10px 0;
+                ">
+                <div style="display: inline-block; width: 200px; height: 150px; border: 2px dashed #1e5a8a; border-radius: 50%; margin: 0 8px;"></div>
+                    <div style="font-size: 2.5em; color: var(--accent); margin: 0 8px;">→</div>
+                <div style="display: inline-block; width: 20px; height: 20px; border: 2px solid #d97706; border-radius: 50%; margin: 0 8px;"></div>
             </div>
         </div>
     </div>
@@ -635,19 +646,19 @@
 
             <defs>
             <marker id="arrowhead"
-                    markerWidth="6"
-                    markerHeight="3"
-                    refX="3"
-                    refY="1"
+                    markerWidth="12"
+                    markerHeight="8"
+                    refX="5"
+                    refY="3.5"
                     orient="auto">
-                <polygon points="0 0, 2 2, 0 4"
+                <polygon points="0 0, 7 3.5, 0 7"
                         fill="var(--highlight)" />
             </marker>
             </defs>
 
             <path d="
-            M 784 603
-            L 984 603
+            M 784 575
+            L 984 575
             L 988 224
             L 648 224"
             stroke="var(--highlight)"
@@ -655,12 +666,12 @@
             fill="none"
             marker-end="url(#arrowhead)" />
 
-            <text x="800" y="590"
+            <text x="800" y="560"
             fill="var(--highlight)"
             font-size="18">
             否 </text>
 
-            <text x="670" y="655"
+            <text x="670" y="625"
             fill="#16a34a"
             font-size="18">
             是 </text>
@@ -689,7 +700,7 @@
                 <li><strong>选分量</strong>：按 $\text{Categorical}(\pi_1,\ldots,\pi_K)$ 随机选一个高斯分量</li>
                 <li><strong>采样点</strong>：从选中高斯 $\mathcal{N}(\boldsymbol{\mu}_k, \mathbf{S}_k^{-1})$ 中采一个点</li>
             </ol>
-            <p class="small">使用 Cholesky 分解高效采样：<br>$\mathbf{x} = \boldsymbol{\mu} + \mathbf{L}^{-\top}\mathbf{z}$，$\mathbf{z} \sim \mathcal{N}(0,\mathbf{I})$<br>其中 $\mathbf{S} = \mathbf{L}\mathbf{L}^\top$</p>
+            <p class="small">使用 Cholesky 分解高效采样：<br><br>$\mathbf{x} = \boldsymbol{\mu} + \mathbf{L}^{-\top}\mathbf{z}$，$\mathbf{z} \sim \mathcal{N}(0,\mathbf{I})$<br><br>其中 $\mathbf{S} = \mathbf{L}\mathbf{L}^\top$</p>
         </div>
         <div>
             <h4>精英筛选（优胜劣汰）</h4>
@@ -731,33 +742,33 @@
 <!-- 1.7 Update Details -->
 <section>
     <h3>自然梯度更新的数学细节</h3>
-    <div class="two-col wide-left">
+    <div class="two-col ">
         <div>
             <p><strong>第一步：责任计算</strong></p>
-            <p class="smaller">
+            <p class="small">
                 $$a_{kb} = \frac{p(\mathbf{x}_b | \boldsymbol{\mu}_k, \mathbf{S}_k)}{\sum_j \pi_j \cdot p(\mathbf{x}_b | \boldsymbol{\mu}_j, \mathbf{S}_j)}$$
                 精英样本"属于"分量 $k$ 的后验概率
             </p>
             <p><strong>第二步：精度矩阵更新</strong></p>
-            <p class="smaller">
+            <p class="small">
                 $$\mathbf{S}_k^{\text{new}} = \mathbf{S}_k - \alpha \sum_b w_b a_{kb} (\mathbf{S}_k \mathbf{d}_{kb} \mathbf{d}_{kb}^\top \mathbf{S}_k - \mathbf{S}_k)$$
                 精英集中的方向 → 精度增大（协方差缩小）
             </p>
         </div>
         <div>
             <p><strong>第三步：均值更新</strong></p>
-            <p class="smaller">
+            <p class="small">
                 $$\boldsymbol{\mu}_k^{\text{new}} = \boldsymbol{\mu}_k + \alpha (\mathbf{S}_k^{\text{new}})^{-1} \sum_b w_b a_{kb} \mathbf{S}_k \mathbf{d}_{kb}$$
                 均值被拉向精英的加权平均方向
             </p>
             <p><strong>第四步：权重更新</strong></p>
-            <p class="smaller">
+            <p class="small">
                 $$\pi \leftarrow \text{softmax}\left(\log\frac{\pi_{1:K-1}}{\pi_K} + \alpha \sum_b w_b(a_{1:K-1,b} - a_{K,b})\right)$$
                 解释力强的分量获得更多权重
             </p>
         </div>
     </div>
-    <p class="smaller" style="margin-top: 8px; color: #888;">其中 $\mathbf{d}_{kb} = \mathbf{x}_b - \boldsymbol{\mu}_k$，$w_b = 1/B$，$\alpha$ 为学习率</p>
+    <p class="small" style="margin-top: 8px; color: #888;">其中 $\mathbf{d}_{kb} = \mathbf{x}_b - \boldsymbol{\mu}_k$，$w_b = 1/B$，$\alpha$ 为学习率</p>
 </section>
 
 <!-- 1.8 Periodic Reset -->
@@ -787,11 +798,11 @@
 <!-- 1.9 Blockwise Mechanism -->
 <section>
     <h3>分块（Blockwise）机制</h3>
-    <div class="two-col wide-right">
+    <div class="two-col">
         <div>
-            <p class="small">当优化变量可自然分成多个语义独立的子块时，<strong>每个子块维护独立的混合高斯分布</strong>，评估时组合。</p>
-            <div style="text-align: center; margin: 12px 0;">
-                <div style="display: flex; gap: 12px; justify-content: center; font-size: 0.65em;">
+            <p class="media">当优化变量可自然分成多个语义独立的子块时，<strong>每个子块维护独立的混合高斯分布</strong>，评估时组合。</p>
+            <div style="text-align: center; margin: 16px 0;">
+                <div style="display: flex; gap: 16px; justify-content: center; font-size: 0.75em;">
                     <div style="border: 1.5px solid var(--accent); border-radius: 6px; padding: 8px;">
                         Block 1 (3D)<br>K个高斯<br>$S_1 [D_1,D_1]$
                     </div>
@@ -799,15 +810,23 @@
                         Block 2 (2D)<br>K个高斯<br>$S_2 [D_2,D_2]$
                     </div>
                     <div style="border: 1.5px solid var(--accent); border-radius: 6px; padding: 8px;">
+                       <br>...<br>
+                    </div>
+                    <div style="border: 1.5px solid var(--accent); border-radius: 6px; padding: 8px;">
                         Block N (4D)<br>K个高斯<br>$S_N [D_N,D_N]$
                     </div>
                 </div>
-                <p class="tiny">↓ 组合为完整向量 $\mathbf{x} = [\mathbf{x}_1 | \mathbf{x}_2 | \cdots | \mathbf{x}_N]$ → 统一评估 $f(\mathbf{x})$ → 各 block 独立更新</p>
+                <p class="small">↓ </p>
+                <p class="small">组合为完整向量 $\mathbf{x} = [\mathbf{x}_1 | \mathbf{x}_2 | \cdots | \mathbf{x}_N]$</p>
+                <p class="small">↓ </p>
+                <p class="small">统一评估 $f(\mathbf{x})$</p>
+                <p class="small">↓</p>
+                <p class="small">各 block 独立更新</p>
             </div>
         </div>
         <div>
             <p><strong>优势：</strong></p>
-            <ul class="small">
+            <ul class="media">
                 <li><strong>维度灾难缓解</strong>：每个 block 协方差矩阵 $D_i \times D_i$，而非总维度平方</li>
                 <li><strong>语义独立性</strong>：不同物理含义的参数不被不当耦合</li>
                 <li><strong>并行化</strong>：JAX <code>vmap</code> 实现各 block 并行更新</li>
@@ -843,7 +862,7 @@
     <div class="two-col equal">
         <div>
             <p><strong>IGO 算法家族</strong></p>
-            <ul class="small">
+            <ul class="media">
                 <li><strong>CMA-ES</strong>：同样维护高斯搜索分布，更新规则不同</li>
                 <li><strong>NES</strong>：直接使用自然梯度更新搜索分布</li>
                 <li><strong>EM 算法</strong>：MGIGO 的更新结构类似 EM</li>
@@ -851,7 +870,7 @@
         </div>
         <div>
             <p><strong>MGIGO 的独特之处</strong></p>
-            <ul class="small">
+            <ul class="media">
                 <li><span class="tag">混合高斯</span> 多模态探索</li>
                 <li><span class="tag">精英选择</span> 优胜劣汰</li>
                 <li><span class="tag">自然梯度</span> 信息几何最优方向</li>
@@ -859,7 +878,7 @@
             </ul>
         </div>
     </div>
-    <p class="small" style="margin-top: 12px; text-align: center; color: #888;">
+    <p class="media" style="margin-top: 12px; text-align: center; color: #888;">
         这三个要素的组合使 MGIGO 特别适合多模态、中等维度的黑盒优化问题
     </p>
 </section>
@@ -920,10 +939,11 @@
 <!-- 2.2 Cos Product Details -->
 <section>
     <h3>案例1：余弦乘积（多模态）</h3>
+
     <div class="two-col wide-right">
         <div>
-            <p class="smaller">$$f(x_1, x_2) = -\cos\left(\frac{\pi x_1}{4}\right) \cdot \cos\left(\frac{\pi x_2}{4}\right)$$</p>
-            <ul class="small">
+            <p class="small">$$f(x_1, x_2) = -\cos\left(\frac{\pi x_1}{4}\right) \cdot \cos\left(\frac{\pi x_2}{4}\right)$$</p>
+            <ul class="media">
                 <li>高度多模态，多个等深全局最优</li>
                 <li>考验<strong>同时追踪多个模态</strong>的能力</li>
                 <li>MGIGO 的多个高斯分量可分别锁定不同谷底</li>
@@ -941,6 +961,9 @@
 
 <section>
     <h3>案例1：余弦乘积（多模态）</h3>
+    <div style="text-align:left;">
+        <p class="smaller">$$f(x_1, x_2) = -\cos\left(\frac{\pi x_1}{4}\right) \cdot \cos\left(\frac{\pi x_2}{4}\right)$$</p>
+    </div>
     <div class="two-col">
         <div>
         <div style="text-align:left;">
@@ -1124,7 +1147,7 @@
             <div class="harrow">→</div>
             <div class="step highlight">
                 <strong>$t=600$</strong><br>
-                <span style="color:#888;">最终收敛</span><br>
+                <span style="color:#888;">最终收敛</span><br>MG
                 精确锁定<br>多个全局最优点
             </div>
         </div>
@@ -1144,22 +1167,22 @@
     <div class="two-col equal">
         <div>
             <h4>无重置</h4>
-            <p class="small">搜索范围过早收缩，<br>可能停滞在局部最优</p>
-            <p class="tiny">📹 <a href="../output_igo_test/cos_igo_test_no_reset.mp4">无重置优化视频</a></p>
+            <p class="media">搜索范围过早收缩，<br>可能停滞在局部最优</p>
+            <p class="small">📹 <a href="../output_igo_test/cos_igo_test_no_reset.mp4">无重置优化视频</a></p>
             <div class="info-box important" style="font-size: 0.75em;">
                 <strong>问题：</strong>精度矩阵持续增大，协方差→0，搜索完全停止
             </div>
         </div>
         <div>
             <h4>有重置（每 $T_0$ 代）</h4>
-            <p class="small">定期重新扩展搜索范围，<br>保持探索能力</p>
-            <p class="tiny">📹 <a href="../output_igo_test/cos_cos_test_with_reset.mp4">有重置优化视频</a></p>
+            <p class="media">定期重新扩展搜索范围，<br>保持探索能力</p>
+            <p class="small">📹 <a href="../output_igo_test/cos_cos_test_with_reset.mp4">有重置优化视频</a></p>
             <div class="info-box" style="font-size: 0.75em;">
                 <strong>效果：</strong>精度被周期性"松开"，但均值保留，搜索持续进行
             </div>
         </div>
     </div>
-    <p class="small" style="margin-top: 12px; text-align: center;">
+    <p class="media" style="margin-top: 12px; text-align: center;">
         重置周期 $T_0$ 是探索-利用平衡的关键参数：太小 → 收敛慢；太大 → 容易陷入局部最优
     </p>
 </section>
@@ -1171,6 +1194,7 @@
     <div class="section-num">Part 3</div>
     <h2>逆最优控制与代价函数设计</h2>
     <p style="color: #888;">通过 IOC 方法设计 IGO 求解器的 cost 函数</p>
+    <p style="color: #888;"> Inverse Optimal Control</p>
 </section>
 
 <!-- 3.1 Motivation -->
@@ -1178,18 +1202,19 @@
     <h3>为什么需要 IOC？——代价函数设计的困境</h3>
     <div class="two-col equal">
         <div>
-            <div class="info-box important">
+            <div class="info-box important" style="font-size: 1.0em;">
                 <strong>直接设计的困难：</strong><br>
-                对于复杂控制任务，直接设计一个好的代价函数 $J$ 非常困难。权重需要反复试凑，缺乏理论指导。
+                对于复杂控制任务，直接设计一个好的代价函数 $J$ 非常困难。权重需要反复试凑，缺乏理论指导和保证。
             </div>
         </div>
         <div>
-            <div class="info-box idea">
+            <div class="info-box idea" style="font-size: 1.0em;">
                 <strong>IOC 的思路：</strong><br>
                 先设计一个"好"的控制律，然后<strong>反推</strong>出使该控制律最优的代价函数——这个代价函数就是 IGO 求解器的 cost。
             </div>
         </div>
     </div>
+    <div>  <br> <br> </div>
     <div style="text-align: center; margin-top: 16px;">
         <div class="hflow" style="font-size: 1.2em;">
             <div class="step">设计<br>控制律</div>
@@ -1200,7 +1225,7 @@
             <div class="harrow">→</div>
             <div class="step highlight">添加约束<br>（如避障等）</div>
             <div class="harrow">→</div>
-            <div class="step">作为 IGO<br>的 cost</div>
+            <div class="step">作为 MGIGO <br>solver的 cost</div>
         </div>
     </div>
 </section>
@@ -1211,18 +1236,18 @@
     <div class="cmp-grid">
         <div class="cmp-card left">
             <h4>前向（直接）最优控制</h4>
-            <p class="small">代价函数 $J$ → 求解 HJB 方程 → 最优控制律 $\mathbf{u}^*$</p>
-            <p class="small" style="color: #dc2626;">HJB 是偏微分方程，对一般非线性系统极难求解</p>
-            <div class="smaller">
+            <p class="media">代价函数 $J$ → 求解 HJB 方程 → 最优控制律 $\mathbf{u}^*$</p>
+            <p class="media" style="color: #dc2626;">HJB 是偏微分方程，对一般非线性系统极难求解</p>
+            <div class="small">
                 $$\min_{\mathbf{u}} \left\{ l(\mathbf{x}) + \mathbf{u}^\top \mathbf{R} \mathbf{u} + \nabla V \cdot [\mathbf{f} + \mathbf{g}\mathbf{u}] \right\} = 0$$
                 $$\mathbf{u}^* = -\frac{1}{2} \mathbf{R}^{-1} \mathbf{g}^\top \nabla V$$
             </div>
         </div>
         <div class="cmp-card right">
             <h4>逆向（IOC）最优控制</h4>
-            <p class="small">镇定控制器 $\mathbf{u} = \mathbf{k}(\mathbf{x})$ → 构造 CLF → 代价函数 $J$</p>
-            <p class="small" style="color: #16a34a;">避免求解 HJB，只需构造 CLF 并验证 $\dot{V} < 0$</p>
-            <div class="smaller">
+            <p class="media">镇定控制器 $\mathbf{u} = \mathbf{k}(\mathbf{x})$ → 构造 CLF → 代价函数 $J$</p>
+            <p class="media" style="color: #16a34a;">避免求解 HJB，只需构造 CLF 并验证 $\dot{V} < 0$</p>
+            <div class="small">
                 $$l(\mathbf{x}) = -\nabla V \cdot [\mathbf{f} + \mathbf{g}\mathbf{k}] - \frac{1}{2}\mathbf{k}^\top \mathbf{R} \mathbf{k} + \frac{1}{4} \nabla V \mathbf{g} \mathbf{R}^{-1} \mathbf{g}^\top (\nabla V)^\top$$
                 $$J = \int_0^\infty [l(\mathbf{x}) + \mathbf{u}^\top \mathbf{R} \mathbf{u}] dt$$
             </div>
@@ -1232,33 +1257,111 @@
 
 <!-- 3.3 CLF -->
 <section>
-    <h3>核心工具：控制 Lyapunov 函数（CLF）</h3>
+    <h3>核心工具：控制李雅普诺夫函数 (CLF)</h3>
+    <h4>Control Lyapunov Function</h5>
     <div class="two-col wide-right">
         <div>
             <p><strong>定义</strong></p>
-            <p class="small">光滑、正定、径向无界的 $V(\mathbf{x})$ 满足：</p>
-            <p class="smaller">
-                $$\inf_{\mathbf{u}} \left\{ \nabla V \cdot [\mathbf{f}(\mathbf{x}) + \mathbf{g}(\mathbf{x}) \mathbf{u}] \right\} < 0, \quad \forall \mathbf{x} \neq \mathbf{0}$$
+
+            <p class="small">
+                对于控制仿射系统
             </p>
+
+            <p class="smaller">
+                $$
+                \dot{\mathbf{x}}
+                =
+                \mathbf{f}(\mathbf{x})
+                +
+                \mathbf{g}(\mathbf{x})\mathbf{u}
+                $$
+            </p>
+
+            <p class="small">
+                若存在光滑、正定、径向无界函数 $V(\mathbf{x})$，
+                且满足
+            </p>
+
+            <p class="smaller">
+                $$
+                \inf_{\mathbf{u}}
+                \left\{
+                \nabla V^\top
+                \big(
+                \mathbf{f}(\mathbf{x})
+                +
+                \mathbf{g}(\mathbf{x})\mathbf{u}
+                \big)
+                \right\}
+                <0,
+                \quad
+                \forall \mathbf{x}\neq0
+                $$
+            </p>
+
             <div class="info-box">
-                <strong>直观含义：</strong>无论系统处于什么状态，总存在某个控制输入能使 $V$ 减小。CLF 的存在性等价于系统的<strong>可镇定性</strong>。
+                <strong>直观含义：</strong>
+                无论系统处于何种状态，总能找到控制输入使
+                $V(\mathbf{x})$ 下降。
+                <br>
+                <strong>CLF 存在 ⇔ 系统可镇定（stabilizable）。</strong>
             </div>
         </div>
+
         <div>
+
             <p><strong>从 CLF 到控制器</strong></p>
-            <p class="small">给定 CLF，可构造点状最小范数（PMN）控制器：</p>
-            <p class="smaller">
-                $$\mathbf{u}_{\text{PMN}} = \arg\min_{\mathbf{u}} \|\mathbf{u}\|^2 \quad \text{s.t.} \quad \dot{V} \leq -\sigma(\mathbf{x})$$
+
+            <p class="small">
+                给定 CLF，可求解最小控制能量问题：
             </p>
-            <p class="small">闭式解：</p>
+
             <p class="smaller">
-                $$\mathbf{u}_{\text{PMN}} = \begin{cases}
-                -\frac{L_f V + \sigma}{ \|L_g V\|^2} (L_g V)^\top, & L_g V \neq \mathbf{0} \\
-                \mathbf{0}, & L_g V = \mathbf{0}
-                \end{cases}$$
+                $$
+                \min_{\mathbf{u}}
+                \|\mathbf{u}\|^2
+                \quad
+                \text{s.t.}
+                \quad
+                \dot V \le -\sigma(\mathbf{x})
+                $$
             </p>
+
+            <p class="small">
+                得到点状最小范数（PMN）控制器：
+            </p>
+
+            <p class="smaller">
+                $$
+                \mathbf{u}_{\text{PMN}}
+                =
+                \begin{cases}
+                -\dfrac{L_fV+\sigma}
+                {\|L_gV\|^2}
+                (L_gV)^\top,
+                & L_gV\neq0\\
+                \mathbf{0},
+                & L_gV=0
+                \end{cases}
+                $$
+            </p>
+
+            <div class="info-box">
+                <strong>关键意义：</strong>
+                CLF 不仅保证稳定性，
+                还能进一步构造具有
+                <strong>最优性解释</strong>
+                的反馈控制律。
+                <br>
+                Freeman & Kokotović (1996) 证明：
+                合适的 CLF 可反推出一个代价函数，
+                使对应控制律成为最优控制解（Inverse Optimality）。
+            </div>
+
         </div>
+
     </div>
+
 </section>
 
 <!-- 3.4 Inverse Optimality Theorem -->
@@ -1332,7 +1435,7 @@
 <!-- 3.7 Affine Form -->
 <section>
     <h3>仿射非线性形式</h3>
-    <p class="small">将系统写为标准仿射形式 $\dot{\mathbf{x}} = \mathbf{f}(\mathbf{x}) + \mathbf{g}(\mathbf{x})\mathbf{u}$：</p>
+    <p class="media">将系统写为标准仿射形式 $\dot{\mathbf{x}} = \mathbf{f}(\mathbf{x}) + \mathbf{g}(\mathbf{x})\mathbf{u}$：</p>
     <div style="text-align: center; font-size: 0.8em;">
         $$
         \underbrace{\begin{bmatrix} \dot{\rho} \\ \dot{\delta} \\ \dot{\gamma} \end{bmatrix}}_{\dot{\mathbf{x}}}
@@ -1349,7 +1452,7 @@
 <!-- 3.8 Control Law Design -->
 <section>
     <h3>控制律设计</h3>
-    <p class="small">目标：镇定系统到原点 $(\rho=0, \delta=0, \gamma=0)$。设计如下控制律：</p>
+    <p class="media">目标：镇定系统到原点 $(\rho=0, \delta=0, \gamma=0)$。设计如下控制律：</p>
     <div class="two-col">
         <div>
             <p><strong>线速度</strong></p>
@@ -1362,7 +1465,7 @@
             <p class="small">$\tilde{\omega}$ 有 4 种变体<br>对应不同的 $\delta$-$\gamma$ 耦合策略</p>
         </div>
     </div>
-    <p style="margin-top: 8px;"><strong>四种 $\tilde{\omega}$ 变体：</strong></p>
+    <p style="margin-top: 20px;"><strong>四种 $\tilde{\omega}$ 变体：</strong></p>
     <table class="smaller">
         <thead><tr><th>变体</th><th>表达式</th><th>耦合特征</th></tr></thead>
         <tbody>
@@ -1377,8 +1480,8 @@
 <!-- 3.9 CLF Construction -->
 <section>
     <h3>CLF 构造</h3>
-    <p class="small">四种控制律变体分别对应四种 CLF 设计：</p>
-    <table class="smaller">
+    <p class="media">四种控制律变体分别对应四种 CLF 设计：</p>
+    <table class="small" style="margin-top: 40px;">
         <thead>
             <tr><th>CLF</th><th>状态空间</th><th>表达式 $V(\rho, \delta, \gamma)$</th><th>$\delta$-$\gamma$ 耦合机制</th></tr>
         </thead>
@@ -1405,27 +1508,11 @@
             </tr>
         </tbody>
     </table>
-    <p class="small" style="margin-top: 10px;">所有 $V_i$ 均满足 CLF 的三个条件：<strong>正定</strong>（$V>0, \forall \mathbf{x}\neq\mathbf{0}$）、<strong>径向无界</strong>（$\|\mathbf{x}\|\to\infty \Rightarrow V\to\infty$）、<strong>可镇定</strong>（$\inf_{\mathbf{u}} \dot{V} < 0$）。</p>
-</section>
-
-<!-- 3.10 Lyapunov Stability Proof -->
-<section>
-    <h3>稳定性验证</h3>
-    <p class="small">以 $\tilde{\omega}_1$ 为例，代入 $\dot{V}$ 验证稳定性：</p>
-    <div class="smaller">
-        $$\dot{V} = -k_1\rho^2\cos^2\gamma + k_1\delta\sin\gamma\cos\gamma - \frac{k_2}{2}\sin^2\gamma - \frac{k_3}{2}\frac{\sin\gamma\sin 2\gamma}{2\gamma}\delta$$
-    </div>
-    <p class="small">当 $k_1, k_2, k_3 > 0$ 且 $\gamma \approx 0$ 时（$\sin\gamma \approx \gamma, \cos\gamma \approx 1$）：</p>
-    <div class="smaller">
-        $$\dot{V} \approx -k_1\rho^2 - \frac{k_2}{2}\gamma^2 + \left(k_1 - \frac{k_3}{2}\right)\gamma\delta$$
-    </div>
-    <div class="info-box theorem">
-        <strong>选取 $k_3 = 2k_1$：</strong>交叉项抵消，$\dot{V} \approx -k_1\rho^2 - \frac{k_2}{2}\gamma^2 \leq 0$，系统<strong>渐近稳定</strong>。
-    </div>
+    <p class="media" style="margin-top: 40px;">所有 $V_i$ 均满足 CLF 的三个条件：<strong>正定</strong>（$V>0, \forall \mathbf{x}\neq\mathbf{0}$）、<strong>径向无界</strong>（$\|\mathbf{x}\|\to\infty \Rightarrow V\to\infty$）、<strong>可镇定</strong>（$\inf_{\mathbf{u}} \dot{V} < 0$）。</p>
 </section>
 
 <!-- 3.11 Inverse Optimal Cost -->
-<section>
+<!-- <section>
     <h3>逆最优代价函数的构造</h3>
     <p class="small">取 $\mathbf{R} = \operatorname{diag}(r_1, r_2) \succ 0$，由逆最优性定理，代价函数为：</p>
     <div class="smaller">
@@ -1445,45 +1532,165 @@
             <tr><td>$r_2 \omega^2$</td><td>惩罚角速度能耗</td></tr>
         </tbody>
     </table>
-</section>
+</section> -->
+<!-- 3.11 Inverse Optimal Cost -->
+<section>
+    <h3>逆最优代价函数的构造</h3>
 
+    <p class="small">
+        选取控制 Lyapunov 函数 $V_i(\mathbf{x})$ 作为最优值函数，
+        并令参考控制律
+        $\mathbf{u}_{\mathrm{ref}}
+        =
+        [v_{\mathrm{ref}},\omega_{\mathrm{ref}}]^T$。
+        根据逆最优控制思想，构造运行代价：
+    </p>
+
+    <div class="smaller">
+        $$
+        l_i(\mathbf{x},\mathbf{u})
+        =
+        -\dot V_i(\mathbf{x})
+        \Big|_{\mathbf{u}=\mathbf{u}_{\mathrm{ref}}}
+        +
+        (\mathbf{u}-\mathbf{u}_{\mathrm{ref}})^T
+        \mathbf{R}
+        (\mathbf{u}-\mathbf{u}_{\mathrm{ref}})
+        $$
+    </div>
+
+    <p class="small">
+        其中
+        $\mathbf{R}=\operatorname{diag}(r_1,r_2)\succ0$，
+        且
+    </p>
+
+    <div class="smaller">
+        $$
+        \dot V_i
+        =
+        L_gV_{i,1}\,v_{\mathrm{ref}}
+        +
+        L_gV_{i,2}\,\omega_{\mathrm{ref}} .
+        $$
+    </div>
+
+    <p class="small">
+        因此总代价函数写为：
+    </p>
+
+    <div class="smaller">
+        $$
+        J_i
+        =
+        \int_0^\infty
+        \Big[
+        -\dot V_i
+        +
+        r_1(v-v_{\mathrm{ref}})^2
+        +
+        r_2(\omega-\omega_{\mathrm{ref}})^2
+        \Big]
+        dt .
+        $$
+    </div>
+
+    <table class="small">
+        <thead>
+            <tr>
+                <th>代价项</th>
+                <th>物理含义</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>$-\dot V_i$</td>
+                <td>鼓励 Lyapunov 函数单调下降，保证系统收敛</td>
+            </tr>
+            <tr>
+                <td>$(v-v_{\mathrm{ref}})^2$</td>
+                <td>惩罚线速度偏离稳定控制律</td>
+            </tr>
+            <tr>
+                <td>$(\omega-\omega_{\mathrm{ref}})^2$</td>
+                <td>惩罚角速度偏离稳定控制律</td>
+            </tr>
+            <tr>
+                <td>$r_1,r_2$</td>
+                <td>调节控制输入偏差的权重</td>
+            </tr>
+        </tbody>
+    </table>
+</section>
 <!-- 3.12 Cost Interpretation -->
 <section>
     <h3>四种变体的代价解释</h3>
     <table>
         <thead>
-            <tr><th>变体</th><th>$\delta$-$\gamma$ 耦合特征</th><th>代价函数特点</th></tr>
+            <tr><th>变体</th><th>$\delta$-$\gamma$ 耦合特征</th><th>代价函数特点</th><th>适用的状态空间</th></tr>
         </thead>
         <tbody>
-            <tr><td>$\tilde{\omega}_1$</td><td>$\frac{\sin 2\gamma}{2\gamma}\delta$（sinc 型）</td><td>标准耦合惩罚，$\gamma$ 大时耦合减弱</td></tr>
-            <tr><td>$\tilde{\omega}_2$</td><td>含 $\cos\gamma/(1+\tan^2(\gamma/2))^2$</td><td>$\gamma$ 较大时更快衰减耦合</td></tr>
-            <tr><td>$\tilde{\omega}_3$</td><td>含 $(1+\tan^2(\delta/2))\tan(\delta/2)$</td><td>$\delta$ 较大时增强耦合，加速大偏差校正</td></tr>
-            <tr><td>$\tilde{\omega}_4$</td><td>$\tilde{\omega}_2$ + $\tilde{\omega}_3$ 的综合</td><td>综合调节，适应范围最广</td></tr>
+            <tr><td>$\tilde{\omega}_1$</td><td>$\frac{\sin 2\gamma}{2\gamma}\delta$（sinc 型）</td><td>标准耦合惩罚，$\gamma$ 大时耦合减弱</td><td>$\mathcal{S}_1 := \{ \rho >0 \} \times \{ \delta \in \mathbb{R}, \gamma \in \mathbb{R} \}$</td></tr>
+            <tr><td>$\tilde{\omega}_2$</td><td>含 $\cos\gamma/(1+\tan^2(\gamma/2))^2$</td><td>$\gamma$ 较大时更快衰减耦合</td><td>$\mathcal{S}_2 := \{ \rho >0 \} \times \{ \delta \in \mathbb{R}, | \gamma  | < \pi \}$</td></tr>
+            <tr><td>$\tilde{\omega}_3$</td><td>含 $(1+\tan^2(\delta/2))\tan(\delta/2)$</td><td>$\delta$ 较大时增强耦合，加速大偏差校正</td><td>$\mathcal{S}_3 := \{ \rho >0 \} \times \{ | \delta | < \pi, \gamma \in \mathbb{R} \}$</td></tr>
+            <tr><td>$\tilde{\omega}_4$</td><td>$\tilde{\omega}_2$ + $\tilde{\omega}_3$ 的综合</td><td>综合调节</td><td>$\mathcal{S}_4 := \{ \rho >0 \} \times \{ | \delta | < \pi, | \gamma | < \pi \}$</td></tr>
         </tbody>
     </table>
-    <div class="info-box idea" style="margin-top: 16px;">
-        <strong>关键洞察：</strong>代价函数不是事先指定的，而是从控制律和 CLF <strong>逆向推导</strong>出来的。通过改变控制律结构来<strong>隐式地表达不同的代价偏好</strong>，而不需要显式地调代价函数的权重——这就是逆最优控制的优势。
+    <div class="info-box idea" style="margin-top: 16px; font-size: 0.7em;">
+        代价函数不是事先指定的，而是从控制律和 CLF <strong>逆向推导</strong>出来的。通过改变控制律结构来<strong>隐式地表达不同的代价偏好</strong>，而不需要显式地调代价函数的权重——这就是逆最优控制的优势。
+    </div>
+    <div class="two-col wide-left" style="margin-top: 16px;">
+        <div>
+            <img src="../figures/space_T.png" alt="状态空间划分图" style="margin-top: 16px; max-height: 300px;">
+        </div>
+        <div>
+            <p class="small">左图是状态空间划分图（$\delta$-$\gamma \in \mathbb{R} $ or $\in (-\pi, \pi)$ ）显示了每个 CLF 的收敛域和对应的稳定区域边界。</p>
+        </div>
     </div>
 </section>
 
 <!-- 3.13 IOC Design Flow -->
 <section>
     <h3>IOC 通用设计流程</h3>
-    <ol class="step-list">
+    <ol  style="font-size: 1.0em; margin-left: 20px; margin-top: 16px;">
         <li><strong>系统建模</strong> — 将动力学写为仿射形式 $\dot{\mathbf{x}} = \mathbf{f}(\mathbf{x}) + \mathbf{g}(\mathbf{x})\mathbf{u}$</li>
         <li><strong>构造 CLF</strong> — 构造正定、径向无界的 $V(\mathbf{x})$，验证 $\inf_{\mathbf{u}} \dot{V} < 0$</li>
         <li><strong>设计控制律</strong> — 基于 $V$ 设计 $\mathbf{u} = \mathbf{k}(\mathbf{x})$，使 $\dot{V} < 0$</li>
         <li><strong>验证逆最优性</strong> — 由定理构造 $l(\mathbf{x})$，验证 $l(\mathbf{x}) > 0$</li>
         <li><strong>解读代价函数</strong> — 将 $J = \int [l(\mathbf{x}) + \mathbf{u}^\top \mathbf{R} \mathbf{u}] dt$ 作为 IGO 的 cost</li>
     </ol>
-    <div class="info-box" style="margin-top: 16px;">
+    <div class="info-box" style="margin-top: 26px;">
         <strong>IOC 的核心优势：</strong>避免求解 HJB 方程、自动获得鲁棒性（类似 LQR 的增益/相位裕度）、代价函数物理含义可解释。
     </div>
 </section>
 
+<!-- 3.15 From IOC to IGO -->
+<section>
+    <h3>IOC → IGO：代价函数作为优化目标</h3>
+    <br>
+    <div class="hflow" style="font-size: 1.0em;">
+        <div class="step">IOC 方法<br>构造代价函数<br>$J(\mathbf{x}, \mathbf{u})$</div>
+        <div class="harrow">→</div>
+        <div class="step">参数化<br>控制律<br>$\mathbf{u} = \mathbf{k}(\mathbf{x}; \boldsymbol{\theta})$</div>
+        <div class="harrow">→</div>
+        <div class="step">定义 cost<br>$f(\boldsymbol{\theta}) = J(\mathbf{x}, \mathbf{k}(\mathbf{x};\boldsymbol{\theta}))$</div>
+        <div class="harrow">→</div>
+        <div class="step highlight">针对实际应用 <br> 添加适当的cost</div>
+        <div class="harrow">→</div>
+        <div class="step highlight">IGO 求解器<br>优化 $\boldsymbol{\theta}$<br>找到最优参数</div>
+    </div>
+    <br>
+    <div class="info-box" style="margin-top: 36px;">
+        <strong>完整工作流：</strong><br>
+        1. 用 IOC 方法为控制任务设计"有意义的"代价函数 $J$<br>
+        2. 将控制律参数化为 $\boldsymbol{\theta}$，定义 IGO 的目标函数 $f(\boldsymbol{\theta})$<br>
+        3. 用 MGIGO 求解器搜索最优参数 $\boldsymbol{\theta}^*$<br>
+        4. 得到既<strong>理论上有保证</strong>（逆最优性）又<strong>数值上最优</strong>（IGO 搜索）的控制律
+    </div>
+</section>
 <!-- 3.14 Live Demo -->
 <section>
-    <h3>现场演示：差速驱动机器人仿真</h3>
+    <h3>应用示例1：差速驱动机器人仿真</h3>
     <div class="two-col">
         <div>
             <p><strong>运行方式：</strong></p>
@@ -1513,7 +1720,7 @@
 </section>
 
 <section>
-    <h3>4 AGV 协同控制演示</h3>
+    <h3>应用示例2：4台 AGV 协同控制演示</h3>
     
     <p class="small">在更复杂的多智能体场景中，IOC 设计的代价函数同样适用。以下是一个4台差速驱动 AGV 协同避障的<a href="../figures/mrs_bs_prediction.mp4" target="_blank">仿真演示</a>：</p>
     <div class="two-col" style="align-items: center;">
@@ -1522,8 +1729,8 @@
             </video>
             <div class="img-caption">4台差速驱动 AGV 在狭窄通道中协同避障，<br>基于 IOC 设计的代价函数进行 IGO 优化</div>
         </div>
-        <div style="text-align: center; max-width: 45%;">
-            <img src="../figures/mrs_bs_solve_time.png" alt="实际求解时间" style="max-width: 80%;">
+        <div style="text-align: center; max-width: 35%;">
+            <img src="../figures/mrs_bs_solve_time.png" alt="实际求解时间" style="max-width: 100%;">
             <div class="img-caption">MGIGO 求解器实际求解时间统计 (CUDA程序) </div>
         </div>
     </div>
@@ -1531,26 +1738,6 @@
 
 </section>
 
-<!-- 3.15 From IOC to IGO -->
-<section>
-    <h3>IOC → IGO：代价函数作为优化目标</h3>
-    <div class="hflow" style="font-size: 0.72em;">
-        <div class="step">IOC 方法<br>构造代价函数<br>$J(\mathbf{x}, \mathbf{u})$</div>
-        <div class="harrow">→</div>
-        <div class="step">参数化<br>控制律<br>$\mathbf{u} = \mathbf{k}(\mathbf{x}; \boldsymbol{\theta})$</div>
-        <div class="harrow">→</div>
-        <div class="step">定义 cost<br>$f(\boldsymbol{\theta}) = J(\mathbf{x}, \mathbf{k}(\mathbf{x};\boldsymbol{\theta}))$</div>
-        <div class="harrow">→</div>
-        <div class="step highlight">IGO 求解器<br>优化 $\boldsymbol{\theta}$<br>找到最优参数</div>
-    </div>
-    <div class="info-box" style="margin-top: 16px;">
-        <strong>完整工作流：</strong><br>
-        1. 用 IOC 方法为控制任务设计"有意义的"代价函数 $J$<br>
-        2. 将控制律参数化为 $\boldsymbol{\theta}$，定义 IGO 的目标函数 $f(\boldsymbol{\theta})$<br>
-        3. 用 MGIGO 求解器搜索最优参数 $\boldsymbol{\theta}^*$<br>
-        4. 得到既<strong>理论上有保证</strong>（逆最优性）又<strong>数值上最优</strong>（IGO 搜索）的控制律
-    </div>
-</section>
 
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <!-- SUMMARY -->
@@ -1593,36 +1780,51 @@
             两者结合，为复杂控制问题的参数优化提供了完整的解决方案
         </p>
     </div>
+    <br>
+    <br>
+    <br>
+    <br>
+    <!-- 左下角一个github网址 -->
+    <div style="position: absolute; bottom: 40px; left: 40px;">
+        <p class="smaller" style="color: #888;">
+            <a href="https://github.com/Konsteidinoeevich/MGIGO.git" target="_blank">github: MGIGO Solver</a>
+        </p>
+    </div>
+    <div style="position: absolute; bottom: 0px; left: 40px;">
+        <p class="smaller" style="color: #888;">
+            <a href="https://github.com/qlp71/IOC_AGV.git" target="_blank">github: IOC AGV</a>
+        </p>
+    </div>
 </section>
 
 <!-- 4.2 Key Takeaways -->
 <section>
     <h3>核心要点回顾</h3>
-    <div class="two-col equal">
+    <div class="two-col equal" style="margin-top: 16px; font-size: 1.0em;">
         <div>
-            <div class="info-box idea">
+            <div class="info-box idea" style="margin-top: 16px; font-size: 1.0em;">
                 <strong>1. 信息几何视角</strong><br>
                 <span class="small">优化 = 在分布空间中沿自然梯度下降，不受参数化影响</span>
             </div>
-            <div class="info-box">
+            <div class="info-box" style="margin-top: 16px; font-size: 1.0em;">
                 <strong>2. 多模态探索</strong><br>
                 <span class="small">高斯混合模型天然支持同时追踪多个最优区域</span>
             </div>
-            <div class="info-box idea">
+            <div class="info-box idea" style="margin-top: 16px; font-size: 1.0em;">
                 <strong>3. 不确定性量化</strong><br>
                 <span class="small">协方差矩阵 = 搜索的"置信度"，从探索到利用的过程可视化</span>
             </div>
         </div>
         <div>
-            <div class="info-box theorem">
+            <div class="info-box theorem" style="margin-top: 16px; font-size: 1.0em;">
                 <strong>4. 逆最优保证</strong><br>
                 <span class="small">IOC 提供理论保证：设计的代价函数使控制器最优</span>
             </div>
-            <div class="info-box">
+            <div class="info-box" style="margin-top: 16px; font-size: 1.0em;">
                 <strong>5. 模块化设计</strong><br>
                 <span class="small">分块机制 + 多 CLF 变体 = 灵活适配不同任务需求</span>
             </div>
-            <div class="info-box theorem">
+            <div class="info-box theorem" style="margin-top: 16px; font-size: 1.0em;">
                 <strong>6. 计算高效</strong><br>
                 <span class="small">JAX jit + vmap + lax.scan = GPU 加速的全并行优化</span>
             </div>
@@ -1630,9 +1832,44 @@
     </div>
 </section>
 
+<!-- 4.2 Key Takeaways --><section>
+    <h3>拓展内容</h3>
+
+    <div class="two-col equal" style="margin-top: 16px; font-size: 1.2em;">
+
+        <div>
+            <div class="info-box idea" style="margin-top: 16px;">
+                <strong>1. 多智能体博弈</strong><br>
+                <span class="small">
+                    将每个智能体的策略参数视为概率分布，
+                    <br>
+                    利用 MGIGO 的分块机制在策略空间中进行自然梯度更新。
+                    <br>
+                    可用于纳什均衡搜索对抗博弈以及多机器人分布式决策问题。
+                </span>
+            </div>
+        </div>
+
+        <div>
+            <div class="info-box theorem" style="margin-top: 16px;">
+                <strong>2. 混合整数规划</strong><br>
+                <span class="small">
+                    将离散决策变量（任务分配、路径选择等）建模为 Bernoulli 或 Categorical 分布，
+                    <br>
+                    连续变量采用高斯分布统一优化，
+                    <br>
+                    为 混合整数非线性 (MINLP) 问题提供一种求解框架。
+                </span>
+            </div>
+        </div>
+
+    </div>
+
+</section>
 <!-- 4.3 References -->
 <section>
     <h3>参考文献</h3>
+    <br>
     <div class="small">
         <ul>
             <li>Kalman, R. E. (1964). "When is a linear control system optimal?" <em>Journal of Basic Engineering</em>, 86(1), 51-60.</li>
@@ -1641,6 +1878,8 @@
             <li>Freeman, R. A. &amp; Kokotović, P. V. (2008). <em>Robust Nonlinear Control Design</em>. Birkhäuser.</li>
             <li>Sepulchre, R., Janković, M., &amp; Kokotović, P. V. (1997). <em>Constructive Nonlinear Control</em>. Springer.</li>
             <li>CMA-ES / NES / IGO: Ollivier, Y., Arnold, L., Auger, A., &amp; Hansen, N. (2017). "Information-Geometric Optimization Algorithms: A Unifying Picture via Invariance Principles." <em>JMLR</em>, 18(18), 1-65.</li>
+            <li>Todorovski, V., Kim, K. H., Astolfi, A., et al. (2025). "Nonholonomic Robot Parking by Feedback—Part I: Modular Strict CLF Designs." *arXiv preprint arXiv:2511.15119</li>
+            <li>Kim, K. H., Todorovski, V., & Krstić, M. (2025). "Nonholonomic Robot Parking by Feedback—Part II: Nonmodular, Inverse Optimal, Adaptive, Prescribed/Fixed-Time and Safe Designs." *arXiv preprint arXiv:2511.15219</li>
         </ul>
     </div>
 </section>
@@ -1649,7 +1888,7 @@
 <!-- END SLIDE -->
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <section class="center-slide">
-    <h2>感谢聆听</h2>
+    <h2>谢谢</h2>
     <p style="font-size: 1.2em; color: #888;">Questions &amp; Discussion</p>
     <hr style="width: 40%; border-color: var(--accent-light); margin: 1.5em auto;">
     <p class="small" style="color: #aaa;">

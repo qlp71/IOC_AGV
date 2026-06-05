@@ -175,7 +175,7 @@ class InteractiveSim:
         self._ioc_computing = False
 
         # -- Build UI --
-        self.fig = plt.figure("IOC-AGV", figsize=(17, 10))
+        self.fig = plt.figure("IOC-AGV", figsize=(16, 10), dpi=120)
         if self.fig.canvas.manager is not None:
             self.fig.canvas.manager.set_window_title("IOC-AGV — Inverse Optimal Control Simulation")
         self._build_axes()
@@ -266,7 +266,7 @@ class InteractiveSim:
             handles=[self.line_traj, self.line_ioc,
                      self.ctrl_polygon, self.ctrl_scatter,
                      self.pt_start, self.pt_target, self.obstacle_patch],
-            loc="upper right", fontsize=7,
+            loc="upper right", fontsize=10,
         ).set_zorder(20)
 
         # -- v / ω plot (dual y-axes) --
@@ -310,16 +310,16 @@ class InteractiveSim:
 
         # legends (built after all lines are created)
         lines_vw = [self.line_v, self.line_w, self.line_ioc_v, self.line_ioc_w]
-        self.ax_vw.legend(lines_vw, [str(l.get_label()) for l in lines_vw],
-                          loc="upper right", fontsize=6)
+        self.ax_vw.legend(lines_vw, [str(l.get_label()) for l in lines_vw], ncol=2,
+                          loc="upper right", fontsize=10)
         lines_xyz = [self.line_x, self.line_y, self.line_theta,
                      self.line_ioc_x, self.line_ioc_y, self.line_ioc_theta]
-        self.ax_xyz.legend(lines_xyz, [str(l.get_label()) for l in lines_xyz],
-                           loc="upper right", fontsize=6)
+        self.ax_xyz.legend(lines_xyz, [str(l.get_label()) for l in lines_xyz], ncol=2,
+                           loc="upper right", fontsize=10)
         lines_pdg = [self.line_rho, self.line_delta, self.line_gamma,
                      self.line_ioc_rho, self.line_ioc_delta, self.line_ioc_gamma]
-        self.ax_pdg.legend(lines_pdg, [str(l.get_label()) for l in lines_pdg],
-                           loc="upper right", fontsize=6)
+        self.ax_pdg.legend(lines_pdg, [str(l.get_label()) for l in lines_pdg], ncol=2,
+                           loc="upper right", fontsize=10)
         
 
     @staticmethod
