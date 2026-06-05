@@ -75,10 +75,45 @@ def cost_circle_constraint(x, ctx):
                     (2.0 * (x1 + x2 - 2) ** 2 + (x1 - x2) ** 2) / 10.0)
     return res
 
+@jax.jit
+def sat(x: jnp.ndarray, k: float = 1.0):
+    x = x / k
+    return k * x / jnp.sqrt(1.0 + x ** 2)
+
+@jax.jit
+def cost_sat_hierarchical(x, ctx):
+    x1 = x[0]
+    x2 = x[1]
+    res = sat(jnp.where(x2 + x1 < -4, - (x2 + x1 + 4) + 1.5,
+                    sat(jnp.where(x2 - x1 > 0, 
+                    1.5 + (x2 - x1), sat(((x1-6)**2 + (x2+4) ** 2) / 50.0)), k=1.0)))
+    return res
+
+# 画一个 3D 的 surface图，展示 cost 的形状
+def plot_3D_surface(cost, x1_lim=(-8.0, 8.0), x2_lim=(-8.0, 8.0), resolution=100):
+    x1 = np.linspace(start=x1_lim[0], stop=x1_lim[1], num=resolution)
+    x2 = np.linspace(start=x2_lim[0], stop=x2_lim[1], num=resolution)
+    xx, yy = np.meshgrid(x1, x2)
+    grid_points = jnp.stack([jnp.asarray(xx).reshape(-1), jnp.asarray(yy).reshape(-1)], axis=1)
+    zz = np.asarray(vmap(lambda p: cost(p, None))(grid_points)).reshape(xx.shape)
+
+    fig = plt.figure(figsize=(8.0, 6.0), dpi=150)
+    ax = fig.add_subplot(111, projection='3d')
+    ax.plot_surface(xx, yy, zz, cmap='viridis', edgecolor='none')
+    ax.set_title('Cost Surface')
+    ax.set_xlabel('x1')
+    ax.set_ylabel('x2')
+    ax.set_zlabel('cost')
+    fig.tight_layout()
+    # fig.colorbar(surf, shrink=0.5, aspect=5)
+    # plt.show()
+
+# plot_3D_surface(cost_sat_hierarchical, x1_lim=(-8.0, 8.0), x2_lim=(-8.0, 8.0), resolution=100)
+
 def exp_fn(x, ctx, cost, dt=0.05):
     return jnp.exp(- cost(x, ctx) * dt)
 
-def calculate_countours(cost, x1_lim=(-12.0, 12.0), x2_lim=(-12.0, 12.0), resolution=280):
+def calculate_countours(cost, x1_lim=(-8.0, 8.0), x2_lim=(-8.0, 8.0), resolution=280):
     x1 = np.linspace(start=x1_lim[0], stop=x1_lim[1], num=resolution)
     x2 = np.linspace(start=x2_lim[0], stop=x2_lim[1], num=resolution)
     xx, yy = np.meshgrid(x1, x2)
@@ -99,6 +134,7 @@ def generate_animation_data(
     t0=100,
     cost=cost_cos_cos,
     sample_count=100,
+    **kwargs,
 ):
     d_max = max(dims)
     if not (m == 1 and d_max == 2):
@@ -106,8 +142,19 @@ def generate_animation_data(
 
     key = random.PRNGKey(seed)
     key, key_init = random.split(key)
-    initial_mu = random.uniform(key_init, shape=(m, k, d_max), minval=-8.0, maxval=8.0)
-    initial_l_inv = jnp.tile(jnp.eye(d_max, dtype=jnp.float32)[None, None, :, :], (m, k, 1, 1)) * 1.0
+    mu0 = kwargs.get("mu0", None)
+    if mu0 is not None:
+        initial_mu = random.uniform(key_init, shape=(m, k, d_max), minval=-0.5, maxval=0.5)
+        for i in range(m):
+            for j in range(k):
+                initial_mu = initial_mu.at[i, j].set(jnp.asarray(mu0) + initial_mu[i, j])
+    else:
+        initial_mu = random.uniform(key_init, shape=(m, k, d_max), minval=-8.0, maxval=8.0)
+    l0 = kwargs.get("l0", None)
+    if l0 is not None:
+        initial_l_inv = jnp.tile(jnp.eye(d_max, dtype=jnp.float32)[None, None, :, :], (m, k, 1, 1)) * l0
+    else:
+        initial_l_inv = jnp.tile(jnp.eye(d_max, dtype=jnp.float32)[None, None, :, :], (m, k, 1, 1)) * 1.0
     initial_v = jnp.zeros((m, k - 1), dtype=jnp.float32)
 
     frame_data = []
@@ -325,14 +372,43 @@ TEST = [
     {"name": "quadratic_test1", "cost": cost_quadratic1},
     {"name": "quadratic_test2", "cost": cost_quadratic2},
     {"name": "quadratic_circle_test", "cost": cost_circle_constraint},
+    {"name": "sat_hierarchical_test", "cost": cost_sat_hierarchical},
 ]
 
 def save_all_contours(output_root):
     for test in TEST:
         save_contour_plot(output_root, test["cost"], cost_name=test["name"])
 
+def save_all_surface_plots(output_root: Path):
+    for test in TEST:
+        plot_3D_surface(test["cost"], x1_lim=(-8.0, 8.0), x2_lim=(-8.0, 8.0), resolution=100)
+        surface_path = output_root / (test['name'] + "_surface.png")
+        plt.savefig(surface_path)
+        plt.close()
+        print(f"Saved surface plot: {surface_path}")
+
+def sat_test():
+    
+    test_idx = 6
+    output_root = Path("output_igo_test")
+    output_root.mkdir(parents=True, exist_ok=True)
+    save_contour_plot(output_root, TEST[test_idx]["cost"], cost_name=TEST[test_idx]["name"])
+    # breakpoint()
+    k = 5
+    dt = 0.15
+    b = 300
+    b0 = 100
+    t0 = 600
+    iter_tot = 600
+    frame_data, all_f_vals = generate_animation_data(
+        total_iterations=iter_tot, frame_stride=5, seed=42,
+        m=1, dims=(2,), k=k, dt=dt, b=b, b0=b0, t0=t0, cost=TEST[test_idx]["cost"], sample_count=100,
+        mu0=(-8, -6), l0=5.5,
+    )
+    render_iteration_animation(output_root=output_root, frame_data=frame_data, all_f_vals=all_f_vals, cost=TEST[test_idx]["cost"], cost_name=TEST[test_idx]["name"], fps=15)
+
 def main():
-    test_idx = 0
+    test_idx = 6
     output_root = Path("output_igo_test")
     output_root.mkdir(parents=True, exist_ok=True)
     save_contour_plot(output_root, TEST[test_idx]["cost"], cost_name=TEST[test_idx]["name"])
@@ -350,6 +426,8 @@ def main():
     render_iteration_animation(output_root=output_root, frame_data=frame_data, all_f_vals=all_f_vals, cost=TEST[test_idx]["cost"], cost_name=TEST[test_idx]["name"], fps=15)
 
 if __name__ == "__main__":
-    main()
+    # main()
     # output_root = Path("output_igo_test")
+    # save_all_surface_plots(output_igo_test)
     # save_all_contours(output_root)
+    sat_test()
