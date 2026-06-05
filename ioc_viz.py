@@ -683,7 +683,7 @@ class InteractiveSim:
             f"Target : ({self.xt:+.1f}, {self.yt:+.1f}, 0.0°)",
             f"Obs    : ({self.r1:.1f}, {self.r2:.1f}), r=0.5",
             f"Law    : V{self.variant_idx + 1}",
-            f"Sat    : {'ON' if self.saturate else 'OFF'}\n",
+            f"Sat    : {'ON' if self.saturate else 'OFF'}",
             f"k₁ = {self.k1:.2f}\nk₂ = {self.k2:.2f}\nk₃ = {self.k3:.2f}",
             f"w₁ = {self.w1:.2f}\nw₂ = {self.w2:.2f}",
             # f"Steps: {n}",

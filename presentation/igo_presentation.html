@@ -118,6 +118,8 @@
         .reveal .slides section {
             text-align: left;
             padding: 16px 48px;
+            box-sizing: border-box;
+
         }
         .reveal .slides .center-slide {
             text-align: center;
@@ -147,7 +149,7 @@
             align-items: flex-start;
             justify-content: flex-start;
         }
-        .two-col > div { flex: 1; text-align: left; }
+        .two-col > div { flex: 1; text-align: left; min-width: 0;  }
         .two-col.equal > div { flex: 1; }
         .two-col.wide-left > div:first-child { flex: 2; }
         .two-col.wide-left > div:last-child { flex: 1; }
@@ -574,7 +576,7 @@
             align-items: center;">
 
             <div class="process terminal">
-                输入：目标函数 $f$，迭代次数 $T$，样本数 $B$
+                输入：目标函数 $f$，迭代次数 $T$，样本数 $B$ 等
             </div>
 
             <div class="arrow"></div>
@@ -657,10 +659,10 @@
             </defs>
 
             <path d="
-            M 784 575
-            L 984 575
-            L 988 224
-            L 648 224"
+            M 762 575
+            L 962 575
+            L 966 224
+            L 626 224"
             stroke="var(--highlight)"
             stroke-width="1.5"
             fill="none"
@@ -804,16 +806,16 @@
             <div style="text-align: center; margin: 16px 0;">
                 <div style="display: flex; gap: 16px; justify-content: center; font-size: 0.75em;">
                     <div style="border: 1.5px solid var(--accent); border-radius: 6px; padding: 8px;">
-                        Block 1 (3D)<br>K个高斯<br>$S_1 [D_1,D_1]$
+                        Block 1 ($D_1$)<br>$K$个高斯<br>$\mathcal{N}_1,...\mathcal{N}_k$
                     </div>
                     <div style="border: 1.5px solid var(--accent); border-radius: 6px; padding: 8px;">
-                        Block 2 (2D)<br>K个高斯<br>$S_2 [D_2,D_2]$
+                        Block 2 ($D_2$)<br>$K$个高斯<br>$\mathcal{N}_1,...\mathcal{N}_k$
                     </div>
                     <div style="border: 1.5px solid var(--accent); border-radius: 6px; padding: 8px;">
                        <br>...<br>
                     </div>
                     <div style="border: 1.5px solid var(--accent); border-radius: 6px; padding: 8px;">
-                        Block N (4D)<br>K个高斯<br>$S_N [D_N,D_N]$
+                        Block N ($D_N$)<br>$K$个高斯<br>$\mathcal{N}_1,...\mathcal{N}_k$
                     </div>
                 </div>
                 <p class="small">↓ </p>
@@ -1223,7 +1225,7 @@
             <div class="harrow">→</div>
             <div class="step highlight">推导<br>代价函数</div>
             <div class="harrow">→</div>
-            <div class="step highlight">添加约束<br>（如避障等）</div>
+            <div class="step highlight">添加约束cost<br>（如避障等）</div>
             <div class="harrow">→</div>
             <div class="step">作为 MGIGO <br>solver的 cost</div>
         </div>
@@ -1636,12 +1638,12 @@
             <tr><td>$\tilde{\omega}_4$</td><td>$\tilde{\omega}_2$ + $\tilde{\omega}_3$ 的综合</td><td>综合调节</td><td>$\mathcal{S}_4 := \{ \rho >0 \} \times \{ | \delta | < \pi, | \gamma | < \pi \}$</td></tr>
         </tbody>
     </table>
-    <div class="info-box idea" style="margin-top: 16px; font-size: 0.7em;">
+    <div class="info-box idea" style="margin-top: 1px; font-size: 0.7em;">
         代价函数不是事先指定的，而是从控制律和 CLF <strong>逆向推导</strong>出来的。通过改变控制律结构来<strong>隐式地表达不同的代价偏好</strong>，而不需要显式地调代价函数的权重——这就是逆最优控制的优势。
     </div>
-    <div class="two-col wide-left" style="margin-top: 16px;">
+    <div class="two-col wide-left" style="margin-top: 1px;">
         <div>
-            <img src="../figures/space_T.png" alt="状态空间划分图" style="margin-top: 16px; max-height: 300px;">
+            <img src="../figures/space_T.png" alt="状态空间划分图" style="margin-top: 16px; max-height: 220px;">
         </div>
         <div>
             <p class="small">左图是状态空间划分图（$\delta$-$\gamma \in \mathbb{R} $ or $\in (-\pi, \pi)$ ）显示了每个 CLF 的收敛域和对应的稳定区域边界。</p>
@@ -1668,14 +1670,14 @@
 <section>
     <h3>IOC → IGO：代价函数作为优化目标</h3>
     <br>
-    <div class="hflow" style="font-size: 1.0em;">
+    <div class="hflow" style="font-size: 0.8em;">
         <div class="step">IOC 方法<br>构造代价函数<br>$J(\mathbf{x}, \mathbf{u})$</div>
         <div class="harrow">→</div>
         <div class="step">参数化<br>控制律<br>$\mathbf{u} = \mathbf{k}(\mathbf{x}; \boldsymbol{\theta})$</div>
         <div class="harrow">→</div>
         <div class="step">定义 cost<br>$f(\boldsymbol{\theta}) = J(\mathbf{x}, \mathbf{k}(\mathbf{x};\boldsymbol{\theta}))$</div>
         <div class="harrow">→</div>
-        <div class="step highlight">针对实际应用 <br> 添加适当的cost</div>
+        <div class="step highlight">针对实际 <br>应用 添加 <br>适当的cost</div>
         <div class="harrow">→</div>
         <div class="step highlight">IGO 求解器<br>优化 $\boldsymbol{\theta}$<br>找到最优参数</div>
     </div>
@@ -1706,12 +1708,12 @@
                 <li>🔴 拖动红点：改变目标位置</li>
                 <li>🎚️ 滑块：调节 $k_1, k_2, k_3$ 和初始朝向 $\theta_0$</li>
                 <li>📻 单选按钮：切换控制律变体 1-4</li>
-                <li>☑️ 复选框：切换 tanh 饱和 ($v_{\max}=1.0, \omega_{\max}=1.0$)</li>
+                <li>☑️ 复选框：切换 tanh 饱和 <br> ($v_{\max}=1.0,\quad \omega_{\max}=1.0$)</li>
             </ul>
         </div>
         <div>
             <img src="../figures/ioc_clf.png" alt="IOC CLF可视化" style="max-height: 480px;">
-            <div class="img-caption">CLF 可视化（$\rho$-$\delta$ 截面）</div>
+            <div class="img-caption">CLF 汇总（$\rho$-$\delta$ 截面）</div>
         </div>
     </div>
     <p class="small" style="margin-top: 8px; text-align: center; color: var(--accent);">
@@ -1723,13 +1725,15 @@
     <h3>应用示例2：4台 AGV 协同控制演示</h3>
     
     <p class="small">在更复杂的多智能体场景中，IOC 设计的代价函数同样适用。以下是一个4台差速驱动 AGV 协同避障的<a href="../figures/mrs_bs_prediction.mp4" target="_blank">仿真演示</a>：</p>
-    <div class="two-col" style="align-items: center;">
+    <div class="two-col equal" style="align-items: center;">
         <div style="text-align: center; max-width: 40%;">
             <video src="../figures/mrs_bs_prediction.mp4" alt="4台AGV协同演示" style="max-width: 100%;" controls>
             </video>
             <div class="img-caption">4台差速驱动 AGV 在狭窄通道中协同避障，<br>基于 IOC 设计的代价函数进行 IGO 优化</div>
         </div>
-        <div style="text-align: center; max-width: 35%;">
+        <!-- 垂直分界线 -->
+        <!-- <div style="border-left: 0px solid var(--border-color); height: 100%; margin: 0 0px;"></div> -->
+        <div style="text-align: right; max-width: 40%;">
             <img src="../figures/mrs_bs_solve_time.png" alt="实际求解时间" style="max-width: 100%;">
             <div class="img-caption">MGIGO 求解器实际求解时间统计 (CUDA程序) </div>
         </div>
