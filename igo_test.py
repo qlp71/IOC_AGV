@@ -23,6 +23,13 @@ from igo.utils import sample_joint_from_solver, build_joint_component_candidates
 # 或者限制最多使用50%显存
 os.environ["XLA_PYTHON_CLIENT_MEM_FRACTION"] = "0.5"
 
+
+@jax.jit
+def saturate(x: jnp.ndarray, k: float = 1.0):
+    x = x / k
+    return k * x / jnp.sqrt(1.0 + x ** 2)
+
+
 @jax.jit
 def cost_cos_cos(x, ctx):
     x1 = x[0]
@@ -38,7 +45,7 @@ def cost_quadratic_half_plane(x, ctx):
     # res /= 10.0
     res = jnp.where(x1 - x2 < 2, 
                     -5.0 * (x1 - x2 - 2) + 20.0, 
-                    (2.0 * (x1 + x2 - 2) ** 2 + (x1 - x2) ** 2) / 10.0)
+                    saturate(2.0 * (x1 + x2 - 2) ** 2 + (x1 - x2) ** 2))
     return res
 
 @jax.jit
@@ -76,17 +83,12 @@ def cost_circle_constraint(x, ctx):
     return res
 
 @jax.jit
-def sat(x: jnp.ndarray, k: float = 1.0):
-    x = x / k
-    return k * x / jnp.sqrt(1.0 + x ** 2)
-
-@jax.jit
 def cost_sat_hierarchical(x, ctx):
     x1 = x[0]
     x2 = x[1]
-    res = sat(jnp.where(x2 + x1 < -4, - (x2 + x1 + 4) + 1.5,
-                    sat(jnp.where(x2 - x1 > 0, 
-                    1.5 + (x2 - x1), sat(((x1-6)**2 + (x2+4) ** 2) / 50.0)), k=1.0)))
+    res = saturate(jnp.where(x2 + x1 < -4, - (x2 + x1 + 4) + 1.5,
+                    saturate(jnp.where(x2 - x1 > 0, 
+                    1.5 + (x2 - x1), saturate(((x1-6)**2 + (x2+4) ** 2) / 50.0)), k=1.0)))
     return res
 
 # 画一个 3D 的 surface图，展示 cost 的形状
@@ -407,12 +409,9 @@ def sat_test():
     )
     render_iteration_animation(output_root=output_root, frame_data=frame_data, all_f_vals=all_f_vals, cost=TEST[test_idx]["cost"], cost_name=TEST[test_idx]["name"], fps=15)
 
-def main():
-    test_idx = 6
+def test_igo(test_idx=0):
     output_root = Path("output_igo_test")
     output_root.mkdir(parents=True, exist_ok=True)
-    save_contour_plot(output_root, TEST[test_idx]["cost"], cost_name=TEST[test_idx]["name"])
-    # breakpoint()
     k = 5
     dt = 0.15
     b = 300
@@ -425,9 +424,13 @@ def main():
     )
     render_iteration_animation(output_root=output_root, frame_data=frame_data, all_f_vals=all_f_vals, cost=TEST[test_idx]["cost"], cost_name=TEST[test_idx]["name"], fps=15)
 
+def main_igo_test_all():
+    for idx in range(len(TEST)):
+        test_igo(test_idx=idx)
+
 if __name__ == "__main__":
-    # main()
+    main_igo_test_all()
     # output_root = Path("output_igo_test")
     # save_all_surface_plots(output_igo_test)
     # save_all_contours(output_root)
-    sat_test()
+    # sat_test()
